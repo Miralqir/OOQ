@@ -1,0 +1,28 @@
+cmake_minimum_required(VERSION 3.13)
+
+project(OOQ VERSION 0.1)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+configure_file(config.h.in config.h @ONLY)
+
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+
+find_package(SDL2 REQUIRED)
+find_package(SDL2_image REQUIRED)
+
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+include_directories(include)
+
+set(SRC
+	src/main.cpp
+	src/manager.cpp
+	src/renderer.cpp
+	src/input.cpp
+	src/game.cpp
+)
+
+add_executable(OOQ WIN32 ${SRC})
+target_link_libraries(OOQ SDL2::Main SDL2::Image)

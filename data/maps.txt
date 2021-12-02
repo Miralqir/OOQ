@@ -1,0 +1,2 @@
+data/map/interior_0.txt
+data/map/room_0.txt

@@ -1,0 +1,11 @@
+--style=linux
+--indent=tab=8
+--align-pointer=name
+--align-reference=name
+--convert-tabs
+--attach-namespaces
+--max-code-length=80
+--pad-header
+--pad-oper
+--unpad-paren
+-n
