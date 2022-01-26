@@ -1,2 +1,2 @@
-data/map/interior_0.txt
-data/map/room_0.txt
+0 data/map/room_0.txt
+1 data/map/interior_0.txt

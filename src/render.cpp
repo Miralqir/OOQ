@@ -1,4 +1,4 @@
-#include "renderer.h"
+#include "render.h"
 
 #include "config.h"
 
@@ -13,35 +13,32 @@ Texture::Texture(SDL_Renderer *renderer, std::filesystem::path path,
 	usage(1),
 	keep(keep)
 {
+
+	SDL_Surface *surface;
 	if (!path.empty() and std::filesystem::exists(path)) {
-		SDL_Surface *surface = IMG_Load(path.c_str());
+		surface = IMG_Load(path.c_str());
 
 		if (!surface)
 			throw std::runtime_error(IMG_GetError());
-
-		texture = SDL_CreateTextureFromSurface(renderer, surface);
-
-		SDL_FreeSurface(surface);
-
-		if (!texture)
-			throw std::runtime_error(SDL_GetError());
 	} else {
 		// create missing texture
-		SDL_Surface *missing = SDL_CreateRGBSurface(0, TILE_SIZE, TILE_SIZE, 32, 0, 0,
-		                       0, 0);
+		surface = SDL_CreateRGBSurface(
+				0, 
+				TILE_SIZE, TILE_SIZE, 32,
+				0, 0, 0, 0);
 
-		if (!missing)
+		if (!surface)
 			throw std::runtime_error(SDL_GetError());
 
-		SDL_FillRect(missing, NULL, SDL_MapRGB(missing->format, 255, 192, 203));
-
-		texture = SDL_CreateTextureFromSurface(renderer, missing);
-
-		SDL_FreeSurface(missing);
-
-		if (!texture)
-			throw std::runtime_error(SDL_GetError());
+		SDL_FillRect(surface, NULL, SDL_MapRGB(surface->format, 169, 169, 169));
 	}
+
+	texture = SDL_CreateTextureFromSurface(renderer, surface);
+
+	SDL_FreeSurface(surface);
+
+	if (!texture)
+		throw std::runtime_error(SDL_GetError());
 
 	SDL_QueryTexture(texture, NULL, NULL, &width, &height);
 }
@@ -126,13 +123,14 @@ void TextureManager::cleanup()
 			it++;
 }
 
-RenderItem::RenderItem(std::list<Texture>::iterator texture, int pos_x, int pos_y, bool flip_vert, bool flip_horz, int layer) :
+RenderItem::RenderItem(std::list<Texture>::iterator texture, int pos_x, int pos_y, bool flip_vert, bool flip_horz, int layer, bool overlay) :
 	texture(texture),
 	pos_x(pos_x),
 	pos_y(pos_y),
 	flip_vert(flip_vert),
 	flip_horz(flip_horz),
-	layer(layer)
+	layer(layer),
+	overlay(overlay)
 {}
 
 /*
@@ -185,6 +183,11 @@ bool RenderItem::getFlipHorz() const
 int RenderItem::getLayer() const
 {
 	return layer;
+}
+
+bool RenderItem::getOverlay() const
+{
+	return overlay;
 }
 
 bool RenderItem::operator<(const RenderItem &other) const
@@ -264,9 +267,9 @@ void Renderer::addRenderItem(const RenderItem &item)
 	render_queue.push(item);
 }
 
-void Renderer::addRenderItem(std::list<Texture>::iterator texture, int pos_x, int pos_y, bool flip_vert, bool flip_horz, int layer)
+void Renderer::addRenderItem(std::list<Texture>::iterator texture, int pos_x, int pos_y, bool flip_vert, bool flip_horz, int layer, bool overlay)
 {
-	render_queue.emplace(texture, pos_x, pos_y, flip_vert, flip_horz, layer);
+	render_queue.emplace(texture, pos_x, pos_y, flip_vert, flip_horz, layer, overlay);
 }
 
 void Renderer::render()
@@ -281,23 +284,32 @@ void Renderer::render()
 		auto render_item = render_queue.top();
 		auto tex = render_item.getTexture();
 
-		SDL_Rect pos = {
-			.x = render_queue.top().getX()
-			     - center_x + screen_width / 2,
-			.y = render_queue.top().getY()
-			     - center_y + screen_height / 2,
-			.w = tex->getWidth(),
-			.h = tex->getHeight()
-		};
+		SDL_Rect pos;
+		if (not render_item.getOverlay())
+			pos = {
+				.x = render_item.getX()
+			     	     - center_x + screen_width / 2,
+				.y = render_item.getY()
+			     	     - center_y + screen_height / 2,
+				.w = tex->getWidth(),
+				.h = tex->getHeight()
+			};
+		else
+			pos = {
+				.x = render_item.getX(),
+				.y = render_item.getY(),
+				.w = tex->getWidth(),
+				.h = tex->getHeight()
+			};
 
 		SDL_RendererFlip flip = static_cast<SDL_RendererFlip>(
 			(SDL_FLIP_VERTICAL and render_item.getFlipVert()) |
 			(SDL_FLIP_VERTICAL and render_item.getFlipHorz())
 		);
 
-		render_queue.pop();
-
 		SDL_RenderCopyEx(renderer, tex->getTexture(), NULL, &pos, 0, NULL, flip);
+
+		render_queue.pop();
 	}
 
 	SDL_RenderPresent(renderer);

@@ -18,10 +18,12 @@ include_directories(include)
 
 set(SRC
 	src/main.cpp
+	src/utilities.cpp
 	src/manager.cpp
-	src/renderer.cpp
+	src/render.cpp
 	src/input.cpp
 	src/game.cpp
+	src/ui.cpp
 )
 
 add_executable(OOQ WIN32 ${SRC})

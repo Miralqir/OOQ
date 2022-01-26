@@ -62,9 +62,10 @@ private:
 	bool flip_vert;
 	bool flip_horz;
 	int layer;
+	bool overlay;
 
 public:
-	RenderItem(std::list<Texture>::iterator texture, int pos_x, int pos_y, bool flip_vert, bool flip_horz, int layer);
+	RenderItem(std::list<Texture>::iterator texture, int pos_x, int pos_y, bool flip_vert, bool flip_horz, int layer, bool overlay = false);
 
 	/* are these setters really necessary?
 	void setTexture(std::list<Texture>::iterator texture);
@@ -79,6 +80,7 @@ public:
 	bool getFlipVert() const;
 	bool getFlipHorz() const;
 	int getLayer() const;
+	bool getOverlay() const;
 
 	bool operator<(const RenderItem &other) const;
 	bool operator>(const RenderItem &other) const;
@@ -106,7 +108,7 @@ public:
 	void setCenter(int x, int y);
 
 	void addRenderItem(const RenderItem &item);
-	void addRenderItem(std::list<Texture>::iterator texture, int pos_x, int pos_y, bool flip_vert, bool flip_horz, int layer);
+	void addRenderItem(std::list<Texture>::iterator texture, int pos_x, int pos_y, bool flip_vert, bool flip_horz, int layer, bool overlay = false);
 
 	void render();
 };

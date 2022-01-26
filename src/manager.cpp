@@ -13,7 +13,10 @@
 
 Manager::Manager(int argc, char **argv) :
 	argc(argc),
-	argv(argv)
+	argv(argv),
+	last_tick(0),
+	current_tick(0),
+	is_quit(false)
 {
 	if (SDL_Init(SDL_INIT_VIDEO) != 0)
 		throw std::runtime_error(SDL_GetError());
@@ -24,10 +27,12 @@ Manager::Manager(int argc, char **argv) :
 	renderer = new Renderer();
 	input_handler = new InputHandler();
 	game_manager = new GameManager(this);
+	ui_manager = new UIManager(this);
 }
 
 Manager::~Manager()
 {
+	delete ui_manager;
 	delete game_manager;
 	delete input_handler;
 	delete renderer;
@@ -50,54 +55,38 @@ GameManager *Manager::getGameManager()
 	return game_manager;
 }
 
+UIManager *Manager::getUIManager()
+{
+	return ui_manager;
+}
+
+void Manager::quit()
+{
+	is_quit = true;
+}
+
 int Manager::run()
 {
-	/*
-	std::vector<std::list<Texture>::iterator> textures;
-	for (int i = 1; i < 10; ++i) {
-	        std::ostringstream path;
-	        path << "data/animation/mc_male/battle_stance/" << i
-	             << ".png";
-	        textures.push_back(renderer->getTextureManager()->loadTexture(path.str()));
-	}
-
-	auto draw_it = textures.begin();
-	unsigned long last_draw_time = 0;
-	const unsigned long FRAME_TIME = 100;
-	*/
-
-	uint64_t last_tick = 0;
-	uint64_t current_tick = 0;
-
-	while (!input_handler->isQuit()) {
+	while (not is_quit) {
 		last_tick = current_tick;
 		/* switch to SDL_GetTicks64 after update to SDL 2.0.18
 		 * current_tick = SDL_GetTicks64();
 		 */
 		current_tick = SDL_GetTicks();
+		uint64_t delta = current_tick - last_tick;
 
 		input_handler->processEvents();
+		if (input_handler->isQuit())
+			is_quit = true;
 
-		/*
-		if (draw_it == textures.end()) {
-		        draw_it = textures.begin();
-		}
+		game_manager->runTick(delta);
 
-		if (draw_it != textures.end()) {
-		        renderer->addRenderItem(*draw_it, 10, 10);
-
-		        unsigned long now = SDL_GetTicks();
-		        if (last_draw_time + FRAME_TIME < now) {
-		                draw_it++;
-		                last_draw_time = now;
-		        }
-
-		}
-		*/
-
-		game_manager->runTick(current_tick - last_tick);
+		ui_manager->runTick(delta);
 
 		renderer->render();
+
+		// debugging purposes
+		//SDL_Delay(500);
 	}
 
 	return 0;

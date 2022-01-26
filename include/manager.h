@@ -1,10 +1,12 @@
 #pragma once
 
-#include "renderer.h"
+#include "render.h"
 #include "input.h"
 #include "game.h"
+#include "ui.h"
 
 class GameManager;
+class UIManager;
 
 class Manager
 {
@@ -14,6 +16,11 @@ private:
 	Renderer *renderer;
 	InputHandler *input_handler;
 	GameManager *game_manager;
+	UIManager *ui_manager;
+
+	uint64_t last_tick = 0;
+	uint64_t current_tick = 0;
+	bool is_quit;
 
 public:
 	Manager(int argc, char **argv);
@@ -22,6 +29,9 @@ public:
 	Renderer *getRenderer();
 	InputHandler *getInputHandler();
 	GameManager *getGameManager();
+	UIManager *getUIManager();
+
+	void quit();
 
 	int run();
 };

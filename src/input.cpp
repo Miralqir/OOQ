@@ -2,6 +2,12 @@
 
 #include <SDL2/SDL.h>
 
+InputHandler::InputHandler() :
+	quit(false),
+	player(DIR_SIZE),
+	player2(DIR_SIZE)
+{}
+
 void InputHandler::processEvents()
 {
 	SDL_Event event;
@@ -17,42 +23,42 @@ void InputHandler::processEvents()
 		 * https://wiki.libsdl.org/SDL_Keycode
 		 */
 		case SDL_KEYDOWN: {
-
 			switch (event.key.keysym.sym) {
 			case SDLK_ESCAPE:
-				quit = true;
+			case SDLK_p:
+				pause = true;
 				break;
 
 			case SDLK_w:
-				up = true;
+				player[UP] = true;
 				break;
 
 			case SDLK_UP:
-				up2 = true;
+				player2[UP] = true;
 				break;
 
 			case SDLK_d:
-				right = true;
+				player[RIGHT] = true;
 				break;
 
 			case SDLK_RIGHT:
-				right2 = true;
+				player2[RIGHT] = true;
 				break;
 
 			case SDLK_s:
-				down = true;
+				player[DOWN] = true;
 				break;
 
 			case SDLK_DOWN:
-				down2 = true;
+				player2[DOWN] = true;
 				break;
 
 			case SDLK_a:
-				left = true;
+				player[LEFT] = true;
 				break;
 
 			case SDLK_LEFT:
-				left2 = true;
+				player2[LEFT] = true;
 				break;
 			}
 
@@ -60,38 +66,42 @@ void InputHandler::processEvents()
 		}
 
 		case SDL_KEYUP: {
-
 			switch (event.key.keysym.sym) {
+			case SDLK_ESCAPE:
+			case SDLK_p:
+				pause = false;
+				break;
+
 			case SDLK_w:
-				up = false;
+				player[UP] = false;
 				break;
 
 			case SDLK_UP:
-				up2 = false;
+				player2[UP] = false;
 				break;
 
 			case SDLK_d:
-				right = false;
+				player[RIGHT] = false;
 				break;
 
 			case SDLK_RIGHT:
-				right2 = false;
+				player2[RIGHT] = false;
 				break;
 
 			case SDLK_s:
-				down = false;
+				player[DOWN] = false;
 				break;
 
 			case SDLK_DOWN:
-				down2 = false;
+				player2[DOWN] = false;
 				break;
 
 			case SDLK_a:
-				left = false;
+				player[LEFT] = false;
 				break;
 
 			case SDLK_LEFT:
-				left2 = false;
+				player2[LEFT] = false;
 				break;
 			}
 
@@ -100,47 +110,30 @@ void InputHandler::processEvents()
 		}
 }
 
-bool InputHandler::isQuit()
+bool InputHandler::isQuit(bool clear)
 {
-	return quit;
+	bool ret = quit;
+	if (clear) quit = false;
+	return ret;
 }
 
-bool InputHandler::isUp()
+bool InputHandler::isPlayer(DIR dir, bool clear)
 {
-	return up;
+	bool ret = player[dir];
+	if (clear) player[dir] = false;
+	return ret;
 }
 
-bool InputHandler::isRight()
+bool InputHandler::isPlayer2(DIR dir, bool clear)
 {
-	return right;
+	bool ret = player2[dir];
+	if (clear) player2[dir] = false;
+	return ret;
 }
 
-bool InputHandler::isDown()
+bool InputHandler::isPause(bool clear)
 {
-	return down;
-}
-
-bool InputHandler::isLeft()
-{
-	return left;
-}
-
-bool InputHandler::isUp2()
-{
-	return up2;
-}
-
-bool InputHandler::isRight2()
-{
-	return right2;
-}
-
-bool InputHandler::isDown2()
-{
-	return down2;
-}
-
-bool InputHandler::isLeft2()
-{
-	return left2;
+	bool ret = pause;
+	if (clear) pause = false;
+	return ret;
 }

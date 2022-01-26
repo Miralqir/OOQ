@@ -1,27 +1,23 @@
 #pragma once
 
+#include "utilities.h"
+
+#include <vector>
+
 class InputHandler
 {
 private:
 	bool quit;
-	bool up;
-	bool right;
-	bool down;
-	bool left;
-	bool up2;
-	bool right2;
-	bool down2;
-	bool left2;
+	std::vector<bool> player;
+	std::vector<bool> player2;
+	bool pause;
 
 public:
+	InputHandler();
+
 	void processEvents();
-	bool isQuit();
-	bool isUp();
-	bool isRight();
-	bool isDown();
-	bool isLeft();
-	bool isUp2();
-	bool isRight2();
-	bool isDown2();
-	bool isLeft2();
+	bool isQuit(bool clear = false);
+	bool isPlayer(DIR dir, bool clear = false);
+	bool isPlayer2(DIR dir, bool clear = false);
+	bool isPause(bool clear = false);
 };
