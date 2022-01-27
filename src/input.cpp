@@ -29,36 +29,32 @@ void InputHandler::processEvents()
 				pause = true;
 				break;
 
+			case SDLK_UP:
+				player2[UP] = true;
 			case SDLK_w:
 				player[UP] = true;
 				break;
 
-			case SDLK_UP:
-				player2[UP] = true;
-				break;
-
+			case SDLK_RIGHT:
+				player2[RIGHT] = true;
 			case SDLK_d:
 				player[RIGHT] = true;
 				break;
 
-			case SDLK_RIGHT:
-				player2[RIGHT] = true;
-				break;
-
+			case SDLK_DOWN:
+				player2[DOWN] = true;
 			case SDLK_s:
 				player[DOWN] = true;
 				break;
 
-			case SDLK_DOWN:
-				player2[DOWN] = true;
-				break;
-
+			case SDLK_LEFT:
+				player2[LEFT] = true;
 			case SDLK_a:
 				player[LEFT] = true;
 				break;
 
-			case SDLK_LEFT:
-				player2[LEFT] = true;
+			case SDLK_RETURN:
+				enter = true;
 				break;
 			}
 
@@ -72,36 +68,32 @@ void InputHandler::processEvents()
 				pause = false;
 				break;
 
+			case SDLK_UP:
+				player2[UP] = false;
 			case SDLK_w:
 				player[UP] = false;
 				break;
 
-			case SDLK_UP:
-				player2[UP] = false;
-				break;
-
+			case SDLK_RIGHT:
+				player2[RIGHT] = false;
 			case SDLK_d:
 				player[RIGHT] = false;
 				break;
 
-			case SDLK_RIGHT:
-				player2[RIGHT] = false;
-				break;
-
+			case SDLK_DOWN:
+				player2[DOWN] = false;
 			case SDLK_s:
 				player[DOWN] = false;
 				break;
 
-			case SDLK_DOWN:
-				player2[DOWN] = false;
-				break;
-
+			case SDLK_LEFT:
+				player2[LEFT] = false;
 			case SDLK_a:
 				player[LEFT] = false;
 				break;
 
-			case SDLK_LEFT:
-				player2[LEFT] = false;
+			case SDLK_RETURN:
+				enter = false;
 				break;
 			}
 
@@ -135,5 +127,12 @@ bool InputHandler::isPause(bool clear)
 {
 	bool ret = pause;
 	if (clear) pause = false;
+	return ret;
+}
+
+bool InputHandler::isEnter(bool clear)
+{
+	bool ret = enter;
+	if (clear) enter = false;
 	return ret;
 }

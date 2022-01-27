@@ -31,10 +31,12 @@ private:
 public:
 	MapManager(GameManager *parent);
 
-	void loadMap(int map);
+	void loadMap(int map, bool respawn = false);
 
 	void getSpawn(int *x, int *y);
 	int getCollision(int pos_x, int pos_y);
+
+	void getSize(int *x, int *y);
 
 	void render();
 
@@ -44,10 +46,6 @@ private:
 
 class GameObject
 {
-	/*
-	 * TODO: move Player code to GameObject
-	 * stuff is decently generic already
-	 */
 protected:
 	GameManager *parent;
 	Renderer *renderer;
@@ -78,6 +76,8 @@ protected:
 	int size_x;
 	int size_y;
 
+	bool collision;
+
 protected:
 	GameObject(GameManager *parent);
 
@@ -93,15 +93,17 @@ public:
 	void setMapPos(int x, int y, bool anim = true);
 	void getMapPos(int *x, int *y);
 	void getSize(int *x, int *y);
-	int checkCollision(int offset_x, int offset_y);
+	int checkMapCollision(int offset_x, int offset_y);
+	bool checkObjectCollision(int offset_x, int offset_y);
 
 	void render();
+	virtual bool collide();
 	virtual void runTick(uint64_t delta);
 
 
 private:
 	// ObjectWalker specific
-	void _setScreenPos(int x, int y);
+	//void _setScreenPos(int x, int y);
 
 	void advanceFrame(DIR dir);
 	void stopFrame(DIR dir);
@@ -149,6 +151,32 @@ public:
 	void runTick(uint64_t delta);
 };
 
+class StaticObject : public GameObject
+{
+public:
+	StaticObject(
+		GameManager *parent, 
+		std::filesystem::path texture_path,
+		int size_x, int size_y,
+		int map_x, int map_y
+	);
+	~StaticObject() = default;
+};
+
+class PickupObject : public GameObject
+{
+public:
+	PickupObject(
+		GameManager *parent, 
+		std::filesystem::path texture_path,
+		int size_x, int size_y,
+		int map_x, int map_y
+	);
+	~PickupObject() = default;
+
+	bool collide();
+};
+
 class GameManager
 {
 private:
@@ -156,8 +184,14 @@ private:
 	Renderer *renderer;
 	MapManager map_manager;
 	std::list<GameObject *> objects;
+	std::vector<std::vector<GameObject *>> collision;
+
+	uint64_t playtime;
 
 	bool paused;
+
+	int collectibles;
+	int collected;
 
 public:
 	GameManager(Manager *parent);
@@ -168,12 +202,21 @@ public:
 	MapManager *getMapManager();
 	Player *getPlayer();
 
+	void loadObject(std::filesystem::path object_path, int map_x, int map_y);
+	void unloadObject(GameObject *object);
+
+	GameObject *getCollision(int pos_x, int pos_y);
+
+	uint64_t getPlaytime();
+
 	void setPaused(bool paused);
 	bool getPaused();
 
 	int getCollected();
 	int getRemaining();
-	uint64_t getPlaytime();
+	int getTotalCollectibles();
+	void addCollectible();
+	void useCollectible();
 
 	void runTick(uint64_t delta);
 };

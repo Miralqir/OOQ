@@ -25,12 +25,9 @@ MapManager::MapManager(GameManager *parent) :
 
 		maps[id] = path;
 	}
-
-	// debug
-	loadMap(1);
 }
 
-void MapManager::loadMap(int map)
+void MapManager::loadMap(int map, bool respawn)
 {
 	// don't reload maps?
 	//if (map == current_map)
@@ -46,6 +43,10 @@ void MapManager::loadMap(int map)
 
 	// read default spawn coords
 	data >> spawn_x >> spawn_y;
+
+	// set player to spawn if requested
+	if (respawn)
+		parent->getPlayer()->setMapPos(spawn_x, spawn_y, false);
 
 	int pos_x, pos_y;
 	std::filesystem::path path;
@@ -64,7 +65,9 @@ void MapManager::loadMap(int map)
 			collision[pos_x][pos_y] = coll;
 		} else if (path.extension() == ".txt") {
 			// load object
-			// TODO: implement
+			//int map_x, map_y;
+			//data >> map_x >> map_y;
+			parent->loadObject(path, pos_x, pos_y);
 		}
 	}
 }
@@ -82,6 +85,16 @@ int MapManager::getCollision(int pos_x, int pos_y)
 		return 1; // default collision for OOB
 
 	return collision[pos_x][pos_y];
+}
+
+void MapManager::getSize(int *x, int *y)
+{
+	*x = tile.size();
+
+	if (not tile.empty())
+		*y = tile[0].size();
+	else
+		*y = 0;
 }
 
 void MapManager::render()
@@ -119,6 +132,7 @@ void MapManager::resizeMapStorage(int x, int y, bool absolute)
 }
 
 GameObject::GameObject(GameManager *parent) :
+	parent(parent),
 	renderer(parent->getRenderer()),
 	input_handler(parent->getManager()->getInputHandler()),
 	map_manager(parent->getMapManager()),
@@ -130,7 +144,8 @@ GameObject::GameObject(GameManager *parent) :
 	dir(DOWN),
 	camera_center(false),
 	size_x(1),
-	size_y(1)
+	size_y(1),
+	collision(false)
 {
 	// default position off screen
 	setMapPos(-1, -1, false);
@@ -155,7 +170,7 @@ GameObject::~GameObject()
 
 void GameObject::setScreenPos(int x, int y, bool anim)
 {
-	if (object_walker)
+	if (object_walker and anim)
 		object_walker->setDestination(x, y);
 	else
 		anim = false;
@@ -214,7 +229,7 @@ void GameObject::getSize(int *x, int *y)
 	*y = size_y;
 }
 
-int GameObject::checkCollision(int offset_x, int offset_y)
+int GameObject::checkMapCollision(int offset_x, int offset_y)
 {
 	int tmp_x = map_x + offset_x;
 	int tmp_y = map_y + offset_y;
@@ -229,6 +244,27 @@ int GameObject::checkCollision(int offset_x, int offset_y)
 			);
 
 	return coll;
+}
+
+bool GameObject::checkObjectCollision(int offset_x, int offset_y)
+{
+	int tmp_x = map_x + offset_x;
+	int tmp_y = map_y + offset_y;
+
+	GameObject *coll = nullptr;
+
+	for (int x = 0; x < size_x; ++x)
+		for (int y = 0; y < size_y; ++y)
+			if (parent->getCollision(tmp_x + x, tmp_y + y) != this)
+				coll = std::max(
+					coll, 
+					parent->getCollision(tmp_x + x, tmp_y + y)
+				);
+
+	if (coll)
+		return coll->collide();
+	else
+		return false;
 }
 
 void GameObject::render()
@@ -249,6 +285,12 @@ void GameObject::render()
 	}
 }
 
+bool GameObject::collide()
+{
+	// reference implementation
+	return collision;
+}
+
 void GameObject::runTick(uint64_t delta)
 {
 	// run ObjectWalker
@@ -256,11 +298,13 @@ void GameObject::runTick(uint64_t delta)
 		object_walker->runTick(delta);
 }
 
+/*
 void GameObject::_setScreenPos(int x, int y)
 {
 	screen_x = x;
 	screen_y = y;
 }
+*/
 
 void GameObject::advanceFrame(DIR dir)
 {
@@ -352,7 +396,7 @@ void ObjectWalker::runTick(uint64_t delta)
 		}
 
 		// send screen position to object
-		parent->_setScreenPos(tmp_x, tmp_y);
+		parent->setScreenPos(tmp_x, tmp_y, false);
 
 		movement_deadline = tick + SPEED;
 
@@ -377,6 +421,13 @@ Player::Player(GameManager *parent, int type) :
 
 	// make camera center
 	camera_center = true;
+
+	// set correct size
+	size_x = 2;
+	size_y = 2;
+
+	// enable collision
+	collision = true;
 
 	// load spawn location
 	int tmp_x, tmp_y;
@@ -466,30 +517,89 @@ void Player::runTick(uint64_t delta)
 	    current_frame == stop_frame) {
 		if (((input_handler->isPlayer(UP) and type == 0) or 
 		    (input_handler->isPlayer2(UP) and type == 1)) and
-		    checkCollision(0, -1) < 1)
+		    checkMapCollision(0, -1) < 1 and
+		    not checkObjectCollision(0, -1))
 			setMapPos(map_x, map_y - 1);
 
 		if (((input_handler->isPlayer(RIGHT) and type == 0) or
 		    (input_handler->isPlayer2(RIGHT) and type == 1)) and
-		    checkCollision(1, 0) < 1)
+		    checkMapCollision(1, 0) < 1 and
+		    not checkObjectCollision(1, 0))
 			setMapPos(map_x + 1, map_y);
 
 		if (((input_handler->isPlayer(DOWN) and type == 0) or
 		    (input_handler->isPlayer2(DOWN) and type == 1)) and
-		    checkCollision(0, 1) < 1)
+		    checkMapCollision(0, 1) < 1 and
+		    not checkObjectCollision(0, 1))
 			setMapPos(map_x, map_y + 1);
 
 		if (((input_handler->isPlayer(LEFT) and type == 0) or
 		    (input_handler->isPlayer2(LEFT) and type == 1)) and
-		    checkCollision(-1, 0) < 1)
+		    checkMapCollision(-1, 0) < 1 and
+		    not checkObjectCollision(-1, 0))
 			setMapPos(map_x - 1, map_y);
 	}
+}
+
+StaticObject::StaticObject(
+	GameManager *parent,
+	std::filesystem::path texture_path,
+	int size_x, int size_y,
+	int map_x, int map_y
+) : GameObject(parent)
+{
+	this->size_x = size_x;
+	this->size_y = size_y;
+	collision = true;
+	setMapPos(map_x, map_y, false);
+
+	TextureManager *texture_manager = renderer->getTextureManager();
+	auto tex = texture_manager->loadTexture(texture_path);
+
+	up[0] = tex;
+	down[0] = tex;
+	side[0] = tex;
+}
+
+PickupObject::PickupObject(
+	GameManager *parent,
+	std::filesystem::path texture_path,
+	int size_x, int size_y,
+	int map_x, int map_y
+) : GameObject(parent)
+{
+	this->size_x = size_x;
+	this->size_y = size_y;
+	setMapPos(map_x, map_y, false);
+
+	TextureManager *texture_manager = renderer->getTextureManager();
+	auto tex = texture_manager->loadTexture(texture_path);
+
+	up[0] = tex;
+	down[0] = tex;
+	side[0] = tex;
+
+	parent->addCollectible();
+}
+
+bool PickupObject::collide()
+{
+	/* 
+	 * override collision
+	 * to handle pick-up
+	 */
+
+	parent->useCollectible();
+	parent->unloadObject(this);
+
+	return false;
 }
 
 GameManager::GameManager(Manager *parent) :
 	parent(parent),
 	renderer(parent->getRenderer()),
-	map_manager(this)
+	map_manager(this),
+	playtime(0)
 {
 	// set renderer size
 	// aspect ratio is 4:3 for classy feel
@@ -499,8 +609,9 @@ GameManager::GameManager(Manager *parent) :
 	// player should always be first object
 	objects.push_back(new Player(this, 0));
 	//objects.push_back(new Player(this, 1));
-
-	// TODO: load objects from file
+	
+	// debug
+	map_manager.loadMap(1, true);
 }
 
 GameManager::~GameManager()
@@ -529,6 +640,51 @@ Player *GameManager::getPlayer()
 	return static_cast<Player *>(objects.front());
 }
 
+void GameManager::loadObject(std::filesystem::path object_path, int map_x, int map_y)
+{
+	std::ifstream object_file(object_path);
+
+	// get object type
+	std::string type;
+	object_file >> type;
+
+	// load data based on type
+	if (type == "static") {
+		std::filesystem::path tex;
+		int size_x, size_y;
+
+		object_file >> tex >> size_x >> size_y;
+
+		objects.push_back(new StaticObject(this, tex, size_x, size_y, map_x, map_y));
+	} else if (type == "pickup") {
+		std::filesystem::path tex;
+		int size_x, size_y;
+
+		object_file >> tex >> size_x >> size_y;
+
+		objects.push_back(new PickupObject(this, tex, size_x, size_y, map_x, map_y));
+	}
+
+	// TODO: add more types
+}
+
+void GameManager::unloadObject(GameObject *object)
+{
+	auto it = std::find(objects.begin(), objects.end(), object);
+
+	if (it != objects.end())
+		objects.erase(it);
+}
+
+GameObject *GameManager::getCollision(int pos_x, int pos_y)
+{
+	if (pos_x < 0 or pos_x >= collision.size() or 
+	    pos_y < 0 or pos_y >= collision[pos_x].size())
+		return nullptr;
+	
+	return collision[pos_x][pos_y];
+}
+
 void GameManager::setPaused(bool paused)
 {
 	this->paused = paused;
@@ -539,25 +695,77 @@ bool GameManager::getPaused()
 	return paused;
 }
 
-// the following functions return bogus data for now
+uint64_t GameManager::getPlaytime()
+{
+	// almost an hour
+	//return 30000000;
+	
+	return playtime;
+}
+
 int GameManager::getCollected()
 {
-	return 2;
+	return collected;
 }
 
 int GameManager::getRemaining()
 {
-	return 6 - 2;
+	return collectibles - collected;
 }
 
-uint64_t GameManager::getPlaytime()
+int GameManager::getTotalCollectibles()
 {
-	// almost an hour
-	return 30000000;
+	return collectibles;
+}
+
+void GameManager::addCollectible()
+{
+	++collectibles;
+}
+
+void GameManager::useCollectible()
+{
+	++collected;
 }
 
 void GameManager::runTick(uint64_t delta)
 {
+	// compute playtime
+	if (not paused)
+		playtime += delta;
+
+	// make sure object collision map size is correct
+	{
+		int size_x, size_y;
+		map_manager.getSize(&size_x, &size_y);
+
+		collision.resize(size_x);
+
+		for(int i = 0; i < collision.size(); ++i)
+			collision[i].resize(size_x);
+	}
+
+	// construct up to date collision map
+	for(int i = 0; i < collision.size(); ++i)
+		for(int j = 0; j < collision[i].size(); ++j)
+			collision[i][j] = nullptr;
+
+	for (auto obj : objects) {
+		int map_x, map_y, size_x, size_y;
+
+		obj->getMapPos(&map_x, &map_y);
+		obj->getSize(&size_x, &size_y);
+
+		for(int i = map_x; i < map_x + size_x; ++i)
+			for(int j = map_y; j < map_y + size_y; ++j) {
+				if (i < 0 or i >= collision.size() or
+				    j < 0 or j >= collision[i].size())
+					continue;
+
+				collision[i][j] = obj;	
+			}
+	}
+
 	// render map tiles
 	map_manager.render();
 
@@ -599,13 +807,13 @@ void GameManager::runTick(uint64_t delta)
 		camera_y /= camera_count;
 	}
 
-	int size_x = std::abs(max_x - min_x);
-	int size_y = std::abs(max_y - min_y);
-	int multiplier = 5;
+	//int size_x = std::abs(max_x - min_x);
+	//int size_y = std::abs(max_y - min_y);
+	//int multiplier = 5;
 
-	while (4 * multiplier * TILE_SIZE < size_x and 3 * multiplier * TILE_SIZE < size_y) 
-		++multiplier;
+	//while (4 * multiplier * TILE_SIZE < size_x and 3 * multiplier * TILE_SIZE < size_y) 
+		//++multiplier;
 
 	renderer->setCenter(camera_x, camera_y);
-	renderer->setSize(4 * multiplier * TILE_SIZE, 3 * multiplier * TILE_SIZE);
+	//renderer->setSize(4 * multiplier * TILE_SIZE, 3 * multiplier * TILE_SIZE);
 }
