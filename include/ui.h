@@ -27,6 +27,9 @@ private:
 	bool paused;
 	bool in_quiz;
 
+	std::string question;
+	std::vector<std::string> answers;
+
 	std::list<Texture>::iterator background;
 	std::list<Texture>::iterator background_quiz;
 	std::list<Texture>::iterator exit_button;
@@ -46,6 +49,7 @@ private:
 	std::vector<std::list<Texture>::iterator> digits_white;
 	std::vector<std::list<Texture>::iterator> digits_green;
 
+
 public:
 	UIManager(Manager *parent);
 
@@ -55,4 +59,5 @@ public:
 	void renderTimePart(uint64_t time, int pos_x, int pos_y, int* final_pos);
 	void renderTime(uint64_t time, int pos_x, int pos_y);
 	void displayQuiz(std::string question, std::vector<std::string> answers);
+	void endQuiz();
 };

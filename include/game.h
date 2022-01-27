@@ -186,7 +186,7 @@ class QuizManager
 {
 private:
 	GameManager *parent;
-	UIManager *ui_manager;
+	//UIManager *ui_manager;
 
 	struct QUESTION {
 		std::string text;
@@ -236,6 +236,7 @@ public:
 	Manager *getManager();
 	Renderer *getRenderer();
 	MapManager *getMapManager();
+	QuizManager *getQuizManager();
 	Player *getPlayer();
 
 	void loadObject(std::filesystem::path object_path, int map_x, int map_y);

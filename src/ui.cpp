@@ -6,9 +6,9 @@ UIManager::UIManager(Manager *parent) :
 	texture_manager(renderer->getTextureManager()),
 	input_handler(parent->getInputHandler()),
 	game_manager(parent->getGameManager()),
-	paused(false)
+	paused(false),
+	in_quiz(false)
 {
-	in_quiz = true;
 	background = texture_manager->loadTexture("data/ui/crem_background.png");
 	background_quiz = texture_manager->loadTexture("data/ui/background_quiz.png");
 	exit_button = texture_manager->loadTexture("data/ui/new_exit.png");
@@ -61,7 +61,7 @@ void UIManager::renderText(std::string text, int pos_x, int pos_y, int max_x)
 	transform(text.begin(), text.end(), text.begin(), ::toupper);
 	int current_x = 0, current_y = 0;
 	for(int i = 0; i < text.size(); i++){
-		if(text[i] != ' ' && text[i] != ',' && text[i] != '?'){
+		if(text[i] != ' ' && text[i] != ',' && text[i] != '?' and text[i] != '-' and text[i] != ':'){
 			renderer->addRenderItem(letters[int(text[i]) - 65], pos_x + current_x, pos_y + current_y, false, false, 11, true);
 			current_x += letters[int(text[i]) - 65]->getWidth() + 1;
 		}
@@ -122,23 +122,33 @@ void UIManager::renderTime(uint64_t time, int pos_x, int pos_y)
 	renderTimePart(seconds, pos_x + final_pos + 18, pos_y, &final_pos);
 }
 
-void UIManager::displayQuiz(std::string question, std::vector<std::string> answears)
+void UIManager::displayQuiz(std::string question, std::vector<std::string> answers)
 {
+	paused = true;
 	in_quiz = true;
-	renderText(question, 15, 15, 130);
-	renderText(answears[0], 175, 15, 130);
-	renderText(answears[1], 175, 105, 130);
-	renderText(answears[2], 175, 200, 130);
+	this->question = question;
+	this->answers = answers;
+	// just in case
+	this->answers.resize(3);
+}
+
+void UIManager::endQuiz()
+{
+	paused = false;
+	in_quiz = false;
 }
 
 void UIManager::runTick(uint64_t delta)
 {
-	if (input_handler->isPause(true)) paused = not paused;
-
-	game_manager->setPaused(paused);
-
-	if(paused)
+	if(not in_quiz)
 	{
+		if (input_handler->isPause(true)) paused = not paused;
+
+		game_manager->setPaused(paused);
+
+		if (not paused)
+			return;
+
 		static int choice = 0;
 		if(input_handler->isPlayer(RIGHT, true))
 		{
@@ -175,14 +185,40 @@ void UIManager::runTick(uint64_t delta)
 			else
 				paused = false;
 		}
-	}
-
-	if(in_quiz)
-	{
+	} else {
+		static std::vector<int> selected(3);
+		static auto digits = digits_green;
 		renderer->addRenderItem(background_quiz, 0, 0, false, false, 9, true);
 		renderText("Q U E S T I O N", 45, 4, 100);
 		renderText("A N S W E R S", 200, 4, 100);
-		std::vector<std::string> ans {"Providing adequate aeration", "Homogenous mixing", "Maintaining an adequate energy source"};
-		displayQuiz("In aerobic industrial microbial processes, which one is the most difficult problems to solve?", ans);
+		renderText(question, 15, 15, 130);
+		if (selected[0])
+			digits = digits_green;
+		else
+			digits = digits_black;
+		renderNumber(digits, 1, 165, 15);
+		renderText(answers[0], 175, 15, 130);
+		if (selected[1])
+			digits = digits_green;
+		else
+			digits = digits_black;
+		renderNumber(digits, 2, 165, 105);
+		renderText(answers[1], 175, 105, 130);
+		if (selected[2])
+			digits = digits_green;
+		else
+			digits = digits_black;
+		renderNumber(digits, 3, 165, 200);
+		renderText(answers[2], 175, 200, 130);
+
+		if (input_handler->isAnswer(1, true))
+			selected[0] = not selected[0];
+		if (input_handler->isAnswer(2, true))
+			selected[1] = not selected[1];
+		if (input_handler->isAnswer(3, true))
+			selected[2] = not selected[2];
+
+		if (input_handler->isEnter(true))
+			game_manager->getQuizManager()->provideAnswer(selected);
 	}
 }

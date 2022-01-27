@@ -610,6 +610,7 @@ bool PickupObject::collide()
 	 * to handle pick-up
 	 */
 
+	parent->getQuizManager()->startQuiz();
 	parent->useCollectible();
 	parent->addHint(hint);
 	parent->unloadObject(this);
@@ -619,7 +620,7 @@ bool PickupObject::collide()
 
 QuizManager::QuizManager(GameManager *parent) :
 	parent(parent),
-	ui_manager(parent->getManager()->getUIManager()),
+	//ui_manager(parent->getManager()->getUIManager()),
 	in_quiz(false),
 	question_asked(-1),
 	have_answer(false)
@@ -668,15 +669,19 @@ void QuizManager::runTick(uint64_t delta)
 		return;
 	}
 
-	parent->setPaused(true);
+	//parent->setPaused(true);
 
 	static std::random_device r;
 	static std::default_random_engine e(r());
 	static std::uniform_int_distribution<int> dist(0, questions.size() - 1);
+	static UIManager *ui_manager = parent->getManager()->getUIManager();
 
 	if (question_asked < 0) {
 		question_asked = dist(e);
-		// inform ui
+		ui_manager->displayQuiz(
+			questions[question_asked].text,
+			questions[question_asked].answers
+		);
 	}
 
 	if (have_answer) {
@@ -685,8 +690,9 @@ void QuizManager::runTick(uint64_t delta)
 		// TODO: inform ui
 		if (answer == questions[question_asked].correct) {
 			in_quiz = false;
+			ui_manager->endQuiz();
 		} else {
-			parent->setPaused(false);
+			//parent->setPaused(false);
 		}
 
 		question_asked = -1;
@@ -722,7 +728,7 @@ GameManager::GameManager(Manager *parent) :
 	hints.push_back(hint);
 	
 	// debug
-	map_manager.loadMap(1, true);
+	map_manager.loadMap(2, true);
 }
 
 GameManager::~GameManager()
@@ -744,6 +750,11 @@ Renderer *GameManager::getRenderer()
 MapManager *GameManager::getMapManager()
 {
 	return &map_manager;
+}
+
+QuizManager *GameManager::getQuizManager()
+{
+	return &quiz_manager;
 }
 
 Player *GameManager::getPlayer()
