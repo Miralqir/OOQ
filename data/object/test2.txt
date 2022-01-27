@@ -1,3 +1,0 @@
-pickup
-data/sprite/pickup/pickup.png
-1 1

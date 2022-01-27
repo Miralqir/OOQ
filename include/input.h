@@ -12,6 +12,7 @@ private:
 	std::vector<bool> player2;
 	bool pause;
 	bool enter;
+	std::vector<bool> answer;
 
 public:
 	InputHandler();
@@ -22,4 +23,5 @@ public:
 	bool isPlayer2(DIR dir, bool clear = false);
 	bool isPause(bool clear = false);
 	bool isEnter(bool clear = false);
+	bool isAnswer(int ans, bool clear = false);
 };

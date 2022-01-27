@@ -13,6 +13,7 @@
 class Manager;
 class GameManager;
 class ObjectWalker;
+class UIManager;
 
 class MapManager
 {
@@ -25,7 +26,7 @@ private:
 
 	int current_map;
 	int spawn_x, spawn_y;
-	std::vector<std::vector<std::list<Texture>::iterator>> tile;
+	std::vector<std::vector<std::vector<std::list<Texture>::iterator>>> tile;
 	std::vector<std::vector<int>> collision;
 
 public:
@@ -165,16 +166,48 @@ public:
 
 class PickupObject : public GameObject
 {
+private:
+	std::string hint;
+
 public:
 	PickupObject(
 		GameManager *parent, 
 		std::filesystem::path texture_path,
 		int size_x, int size_y,
-		int map_x, int map_y
+		int map_x, int map_y,
+		std::string hint
 	);
 	~PickupObject() = default;
 
 	bool collide();
+};
+
+class QuizManager
+{
+private:
+	GameManager *parent;
+	UIManager *ui_manager;
+
+	struct QUESTION {
+		std::string text;
+		std::vector<std::string> answers;
+		std::vector<int> correct;
+	};
+
+	std::vector<QUESTION> questions;
+
+	bool in_quiz;
+	int question_asked;
+	bool have_answer;
+	std::vector<int> answer;
+
+public:
+	QuizManager(GameManager *parent);
+
+	void startQuiz();
+	void provideAnswer(std::vector<int> answer);
+
+	void runTick(uint64_t delta);
 };
 
 class GameManager
@@ -183,6 +216,8 @@ private:
 	Manager *parent;
 	Renderer *renderer;
 	MapManager map_manager;
+	QuizManager quiz_manager;
+
 	std::list<GameObject *> objects;
 	std::vector<std::vector<GameObject *>> collision;
 
@@ -192,6 +227,7 @@ private:
 
 	int collectibles;
 	int collected;
+	std::list<std::string> hints;
 
 public:
 	GameManager(Manager *parent);
@@ -205,6 +241,7 @@ public:
 	void loadObject(std::filesystem::path object_path, int map_x, int map_y);
 	void unloadObject(GameObject *object);
 
+	void updateCollision();
 	GameObject *getCollision(int pos_x, int pos_y);
 
 	uint64_t getPlaytime();
@@ -217,6 +254,8 @@ public:
 	int getTotalCollectibles();
 	void addCollectible();
 	void useCollectible();
+	void addHint(std::string hint);
+	std::list<std::string> getHints();
 
 	void runTick(uint64_t delta);
 };

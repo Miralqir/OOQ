@@ -1,2 +1,3 @@
 0 data/map/room_0.txt
 1 data/map/interior_0.txt
+2 data/map/poli.txt

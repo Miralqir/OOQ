@@ -5,7 +5,8 @@
 InputHandler::InputHandler() :
 	quit(false),
 	player(DIR_SIZE),
-	player2(DIR_SIZE)
+	player2(DIR_SIZE),
+	answer(3)
 {}
 
 void InputHandler::processEvents()
@@ -56,6 +57,18 @@ void InputHandler::processEvents()
 			case SDLK_RETURN:
 				enter = true;
 				break;
+
+			case SDLK_1:
+				answer[0] = true;
+				break;
+
+			case SDLK_2:
+				answer[1] = true;
+				break;
+
+			case SDLK_3:
+				answer[2] = true;
+				break;
 			}
 
 			break;
@@ -94,6 +107,18 @@ void InputHandler::processEvents()
 
 			case SDLK_RETURN:
 				enter = false;
+				break;
+
+			case SDLK_1:
+				answer[0] = false;
+				break;
+
+			case SDLK_2:
+				answer[1] = false;
+				break;
+
+			case SDLK_3:
+				answer[2] = false;
 				break;
 			}
 
@@ -135,4 +160,12 @@ bool InputHandler::isEnter(bool clear)
 	bool ret = enter;
 	if (clear) enter = false;
 	return ret;
+}
+
+bool InputHandler::isAnswer(int ans, bool clear)
+{
+	if (ans < 1 or ans > 3)
+		return false;
+
+	return answer[ans - 1];
 }

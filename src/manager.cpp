@@ -6,7 +6,6 @@
 #include <vector>
 #include <list>
 #include <string>
-#include <sstream>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -67,14 +66,19 @@ void Manager::quit()
 
 int Manager::run()
 {
+	uint64_t delta = 0;
+
 	while (not is_quit) {
-		last_tick = current_tick;
-		/* switch to SDL_GetTicks64 after update to SDL 2.0.18
+		/* 
+		 * switch to SDL_GetTicks64 after update to SDL 2.0.18
 		 * current_tick = SDL_GetTicks64();
 		 */
+		// get time passed since last frame
+		last_tick = current_tick;
 		current_tick = SDL_GetTicks();
-		uint64_t delta = current_tick - last_tick;
+		delta = current_tick - last_tick;
 
+		// handle events
 		input_handler->processEvents();
 		if (input_handler->isQuit())
 			is_quit = true;
@@ -85,8 +89,16 @@ int Manager::run()
 
 		renderer->render();
 
-		// debugging purposes
-		//SDL_Delay(500);
+		// limit fps
+		static const uint64_t max_fps = 60;
+		static const uint64_t min_ticks = 1000 / max_fps;
+
+		// calculate time it took to run this frame
+		delta = SDL_GetTicks() - current_tick;
+
+		if (delta < min_ticks)
+			SDL_Delay(min_ticks - delta);
+
 	}
 
 	return 0;

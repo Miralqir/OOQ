@@ -1,0 +1,50 @@
+What are the characteristics of bioprocesses?
+non-linearity
+multivariability
+parameter time variance
+1 2 3
+The Monod model can be applied only for the biosystems with equilibrated growth, e.g.
+batch culture
+steady state phase in continuous cultivation
+fed-batch culture, but only in the exponential phase
+1 2 0
+Which of the following factors can affect enzyme activity?
+temperature
+PH
+pressure
+1 2 0
+Important industrial products obtainable from microorganisms include:
+the cells themselves
+primary metabolites
+enzymes
+3 0 0
+Which of the following traits would be important for a microorganism used in industrial processes?
+slow growth
+product remains within the cell
+genetic stability
+3 0 0
+Which of these Reactions can be performed in a membrane reactor?
+succinate to Fumarate
+L-lactate to Pyruvate
+none of the above
+1 2 0
+Which one of the conditions proves that a fluid is a Birmingham plastic?
+the fluid can withstand a certain value of stress
+a solid becomes a fluid
+the apparent viscosity decreases
+1 2 3
+In aerobic industrial microbial processes, one of the most difficult problems to solve is:
+providing adequate aeration
+homogenous mixing
+maintaining an adequate energy source
+1 0 0
+Which stage is preferred for the estimation of the rate of enzymatic reaction?
+initial
+mid
+final
+1 0 0
+What is the term Km:
+concentration of the enzyme
+concentration of the substrate
+concentration of the catalyst
+2 0 0

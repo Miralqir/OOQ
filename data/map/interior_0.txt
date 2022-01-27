@@ -255,7 +255,6 @@
 13 15 data/sprite/tile/interior_0/253.png 0 0
 14 15 data/sprite/tile/interior_0/254.png 0 0
 15 15 data/sprite/tile/interior_0/255.png 0 0
-2  3  data/object/test.txt
-2  6  data/object/test2.txt
-2  9  data/object/test2.txt
+2  6  data/object/pickup1.txt
+2  9  data/object/pickup2.txt
 

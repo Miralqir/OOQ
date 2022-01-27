@@ -6,7 +6,9 @@
 #include <limits>
 #include <cmath>
 #include <utility>
+#include <random>
 #include <fstream>
+#include <iostream>
 
 MapManager::MapManager(GameManager *parent) :
 	parent(parent),
@@ -57,11 +59,10 @@ void MapManager::loadMap(int map, bool respawn)
 
 		if (path.extension() == ".png") {
 			// load tile
-			// TODO: implement layers
 			int coll, layer;
 			data >> coll >> layer;
 
-			tile[pos_x][pos_y] = texture_manager->loadTexture(path);
+			tile[pos_x][pos_y][layer] = texture_manager->loadTexture(path);
 			collision[pos_x][pos_y] = coll;
 		} else if (path.extension() == ".txt") {
 			// load object
@@ -100,8 +101,13 @@ void MapManager::getSize(int *x, int *y)
 void MapManager::render()
 {
 	for (int i = 0; i < tile.size(); ++i)
-		for (int j = 0; j < tile[i].size(); ++j)
-			renderer->addRenderItem(tile[i][j], i * TILE_SIZE, j * TILE_SIZE, false, false, 0);
+		for (int j = 0; j < tile[i].size(); ++j) {
+			if (tile[i][j][0] != texture_manager->getMissingTexture())
+				renderer->addRenderItem(tile[i][j][0], i * TILE_SIZE, j * TILE_SIZE, false, false, 0);
+
+			if (tile[i][j][1] != texture_manager->getMissingTexture())
+				renderer->addRenderItem(tile[i][j][1], i * TILE_SIZE, j * TILE_SIZE, false, false, 2);
+		}
 }
 
 void MapManager::resizeMapStorage(int x, int y, bool absolute)
@@ -126,7 +132,11 @@ void MapManager::resizeMapStorage(int x, int y, bool absolute)
 	collision.resize(size_x);
 
 	for (int i = 0; i < size_x; ++i) {
-		tile[i].resize(size_y, texture_manager->getMissingTexture());
+		tile[i].resize(size_y);
+
+		for (int j = 0; j < tile[i].size(); ++j)
+			tile[i][j].resize(2, texture_manager->getMissingTexture());
+
 		collision[i].resize(size_y, 1);
 	}
 }
@@ -436,7 +446,7 @@ Player::Player(GameManager *parent, int type) :
 
 	// load textures
 	// TODO: load male/female based on choice
-	// TODO: massively improve texture loading logic
+	// TODO: improve texture loading logic
 
 	TextureManager *texture_manager = renderer->getTextureManager();
 
@@ -518,26 +528,34 @@ void Player::runTick(uint64_t delta)
 		if (((input_handler->isPlayer(UP) and type == 0) or 
 		    (input_handler->isPlayer2(UP) and type == 1)) and
 		    checkMapCollision(0, -1) < 1 and
-		    not checkObjectCollision(0, -1))
+		    not checkObjectCollision(0, -1)) {
 			setMapPos(map_x, map_y - 1);
+			//return;
+		}
 
 		if (((input_handler->isPlayer(RIGHT) and type == 0) or
 		    (input_handler->isPlayer2(RIGHT) and type == 1)) and
 		    checkMapCollision(1, 0) < 1 and
-		    not checkObjectCollision(1, 0))
+		    not checkObjectCollision(1, 0)) {
 			setMapPos(map_x + 1, map_y);
+			//return;
+		}
 
 		if (((input_handler->isPlayer(DOWN) and type == 0) or
 		    (input_handler->isPlayer2(DOWN) and type == 1)) and
 		    checkMapCollision(0, 1) < 1 and
-		    not checkObjectCollision(0, 1))
+		    not checkObjectCollision(0, 1)) {
 			setMapPos(map_x, map_y + 1);
+			//return;
+		}
 
 		if (((input_handler->isPlayer(LEFT) and type == 0) or
 		    (input_handler->isPlayer2(LEFT) and type == 1)) and
 		    checkMapCollision(-1, 0) < 1 and
-		    not checkObjectCollision(-1, 0))
+		    not checkObjectCollision(-1, 0)) {
 			setMapPos(map_x - 1, map_y);
+			//return;
+		}
 	}
 }
 
@@ -565,8 +583,11 @@ PickupObject::PickupObject(
 	GameManager *parent,
 	std::filesystem::path texture_path,
 	int size_x, int size_y,
-	int map_x, int map_y
-) : GameObject(parent)
+	int map_x, int map_y,
+	std::string hint
+) : 
+	GameObject(parent),
+	hint(hint)
 {
 	this->size_x = size_x;
 	this->size_y = size_y;
@@ -590,16 +611,100 @@ bool PickupObject::collide()
 	 */
 
 	parent->useCollectible();
+	parent->addHint(hint);
 	parent->unloadObject(this);
 
 	return false;
+}
+
+QuizManager::QuizManager(GameManager *parent) :
+	parent(parent),
+	ui_manager(parent->getManager()->getUIManager()),
+	in_quiz(false),
+	question_asked(-1),
+	have_answer(false)
+{
+	// TODO: implement
+	std::ifstream question_file("data/questions.txt");
+
+	QUESTION temp;
+	temp.answers.resize(3);
+	temp.correct.resize(3);
+
+	while (not question_file.eof()) {
+		std::getline(question_file, temp.text);
+		std::getline(question_file, temp.answers[0]);
+		std::getline(question_file, temp.answers[1]);
+		std::getline(question_file, temp.answers[2]);
+		question_file >> temp.correct[0] >> temp.correct[1]
+			      >> temp.correct[2] >> std::ws;
+
+		std::sort(temp.correct.begin(), temp.correct.end());
+
+		questions.push_back(temp);
+	}
+}
+
+void QuizManager::startQuiz()
+{
+	in_quiz = true;
+}
+
+void QuizManager::provideAnswer(std::vector<int> answer)
+{
+	this->answer = answer;
+	this->answer.resize(3, 0);
+	std::sort(this->answer.begin(), this->answer.end());
+	have_answer = true;
+}
+
+void QuizManager::runTick(uint64_t delta)
+{
+	// TODO: implement
+	if (not in_quiz) {
+		//question_asked = -1;
+		//have_answer = false;
+
+		return;
+	}
+
+	parent->setPaused(true);
+
+	static std::random_device r;
+	static std::default_random_engine e(r());
+	static std::uniform_int_distribution<int> dist(0, questions.size() - 1);
+
+	if (question_asked < 0) {
+		question_asked = dist(e);
+		// inform ui
+	}
+
+	if (have_answer) {
+		have_answer = false;
+
+		// TODO: inform ui
+		if (answer == questions[question_asked].correct) {
+			in_quiz = false;
+		} else {
+			parent->setPaused(false);
+		}
+
+		question_asked = -1;
+	}
+
+	//parent->setPaused(false);
+	//in_quiz = true;
 }
 
 GameManager::GameManager(Manager *parent) :
 	parent(parent),
 	renderer(parent->getRenderer()),
 	map_manager(this),
-	playtime(0)
+	quiz_manager(this),
+	playtime(0),
+	paused(false),
+	collectibles(0),
+	collected(0)
 {
 	// set renderer size
 	// aspect ratio is 4:3 for classy feel
@@ -609,6 +714,12 @@ GameManager::GameManager(Manager *parent) :
 	// player should always be first object
 	objects.push_back(new Player(this, 0));
 	//objects.push_back(new Player(this, 1));
+	
+	// load first hint
+	std::ifstream firsthint("data/firsthint.txt");
+	std::string hint;
+	std::getline(firsthint, hint);
+	hints.push_back(hint);
 	
 	// debug
 	map_manager.loadMap(1, true);
@@ -659,81 +770,34 @@ void GameManager::loadObject(std::filesystem::path object_path, int map_x, int m
 	} else if (type == "pickup") {
 		std::filesystem::path tex;
 		int size_x, size_y;
+		std::string hint;
 
-		object_file >> tex >> size_x >> size_y;
+		object_file >> tex >> size_x >> size_y >> std::ws;
+		std::getline(object_file, hint);
 
-		objects.push_back(new PickupObject(this, tex, size_x, size_y, map_x, map_y));
+		objects.push_back(new PickupObject(this, tex, size_x, size_y, map_x, map_y, hint));
 	}
 
 	// TODO: add more types
+
+	// update collision
+	updateCollision();
 }
 
 void GameManager::unloadObject(GameObject *object)
 {
 	auto it = std::find(objects.begin(), objects.end(), object);
 
-	if (it != objects.end())
+	if (it != objects.end()) {
 		objects.erase(it);
+
+		// update collision
+		updateCollision();
+	}
 }
 
-GameObject *GameManager::getCollision(int pos_x, int pos_y)
+void GameManager::updateCollision()
 {
-	if (pos_x < 0 or pos_x >= collision.size() or 
-	    pos_y < 0 or pos_y >= collision[pos_x].size())
-		return nullptr;
-	
-	return collision[pos_x][pos_y];
-}
-
-void GameManager::setPaused(bool paused)
-{
-	this->paused = paused;
-}
-
-bool GameManager::getPaused()
-{
-	return paused;
-}
-
-uint64_t GameManager::getPlaytime()
-{
-	// almost an hour
-	//return 30000000;
-	
-	return playtime;
-}
-
-int GameManager::getCollected()
-{
-	return collected;
-}
-
-int GameManager::getRemaining()
-{
-	return collectibles - collected;
-}
-
-int GameManager::getTotalCollectibles()
-{
-	return collectibles;
-}
-
-void GameManager::addCollectible()
-{
-	++collectibles;
-}
-
-void GameManager::useCollectible()
-{
-	++collected;
-}
-
-void GameManager::runTick(uint64_t delta)
-{
-	// compute playtime
-	if (not paused)
-		playtime += delta;
-
 	// make sure object collision map size is correct
 	{
 		int size_x, size_y;
@@ -765,6 +829,78 @@ void GameManager::runTick(uint64_t delta)
 				collision[i][j] = obj;	
 			}
 	}
+}
+
+GameObject *GameManager::getCollision(int pos_x, int pos_y)
+{
+	if (pos_x < 0 or pos_x >= collision.size() or 
+	    pos_y < 0 or pos_y >= collision[pos_x].size())
+		return nullptr;
+	
+	return collision[pos_x][pos_y];
+}
+
+uint64_t GameManager::getPlaytime()
+{
+	// almost an hour
+	//return 30000000;
+	
+	return playtime;
+}
+
+void GameManager::setPaused(bool paused)
+{
+	this->paused = paused;
+}
+
+bool GameManager::getPaused()
+{
+	return paused;
+}
+
+int GameManager::getCollected()
+{
+	return collected;
+}
+
+int GameManager::getRemaining()
+{
+	return collectibles - collected;
+}
+
+int GameManager::getTotalCollectibles()
+{
+	return collectibles;
+}
+
+void GameManager::addCollectible()
+{
+	++collectibles;
+}
+
+void GameManager::useCollectible()
+{
+	++collected;
+}
+
+void GameManager::addHint(std::string hint)
+{
+	hints.push_back(hint);
+}
+
+std::list<std::string> GameManager::getHints()
+{
+	return hints;
+}
+
+void GameManager::runTick(uint64_t delta)
+{
+	// compute playtime
+	if (not paused)
+		playtime += delta;
+
+	// update collision map
+	updateCollision();
 
 	// render map tiles
 	map_manager.render();
@@ -816,4 +952,7 @@ void GameManager::runTick(uint64_t delta)
 
 	renderer->setCenter(camera_x, camera_y);
 	//renderer->setSize(4 * multiplier * TILE_SIZE, 3 * multiplier * TILE_SIZE);
+	
+	// update quiz if needed
+	quiz_manager.runTick(delta);
 }
