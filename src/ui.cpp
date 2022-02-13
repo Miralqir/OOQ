@@ -1,5 +1,7 @@
 #include "ui.h"
 
+#include <cctype>
+
 UIManager::UIManager(Manager *parent) :
 	parent(parent),
 	renderer(parent->getRenderer()),
@@ -61,13 +63,13 @@ void UIManager::renderText(std::string text, int pos_x, int pos_y, int max_x)
 	transform(text.begin(), text.end(), text.begin(), ::toupper);
 	int current_x = 0, current_y = 0;
 	for(int i = 0; i < text.size(); i++){
-		if(text[i] != ' ' && text[i] != ',' && text[i] != '?' and text[i] != '-' and text[i] != ':'){
+		if(std::isalpha(text[i])){
 			renderer->addRenderItem(letters[int(text[i]) - 65], pos_x + current_x, pos_y + current_y, false, false, 11, true);
-			current_x += letters[int(text[i]) - 65]->getWidth() + 1;
+			current_x += letters[int(text[i]) - 65]()->getWidth() + 1;
 		}
 		else if(text[i] == '?'){
 			renderer->addRenderItem(sign, pos_x + current_x, pos_y + current_y, false, false, 11, true);
-			current_x += sign->getWidth() + 1;
+			current_x += sign()->getWidth() + 1;
 		}
 		else if(text[i] == ','){
 			current_y += 10;
@@ -83,7 +85,7 @@ void UIManager::renderText(std::string text, int pos_x, int pos_y, int max_x)
 	}
 }
 
-void UIManager::renderNumber(std::vector<std::list<Texture>::iterator> type_digits, int number, int pos_x, int pos_y)
+void UIManager::renderNumber(std::vector<TextureAccess> type_digits, int number, int pos_x, int pos_y)
 {
 	int digit, get_digit;
 	int nr_digits = countDigit(number);
@@ -92,7 +94,7 @@ void UIManager::renderNumber(std::vector<std::list<Texture>::iterator> type_digi
 		get_digit = std::pow(10, i);
 		digit = (number / get_digit) % 10;
 		renderer->addRenderItem(type_digits[digit], pos_x + current_pos, pos_y, false, false, 11, true);
-		current_pos += type_digits[digit]->getWidth() + 1;
+		current_pos += type_digits[digit]()->getWidth() + 1;
 	}
 }
 
@@ -105,7 +107,7 @@ void UIManager::renderTimePart(uint64_t time, int pos_x, int pos_y, int* final_p
 		get_digit = std::pow(10, i);
 		digit = (time / get_digit) % 10;
 		renderer->addRenderItem(digits_white[digit], pos_x + current_pos, pos_y, false, false, 11, true);
-		current_pos += digits_white[digit]->getWidth() + 1;
+		current_pos += digits_white[digit]()->getWidth() + 1;
 	}
 	*final_pos = current_pos;
 }
@@ -124,7 +126,7 @@ void UIManager::renderTime(uint64_t time, int pos_x, int pos_y)
 
 void UIManager::displayQuiz(std::string question, std::vector<std::string> answers)
 {
-	paused = true;
+	//paused = true;
 	in_quiz = true;
 	this->question = question;
 	this->answers = answers;
@@ -134,21 +136,16 @@ void UIManager::displayQuiz(std::string question, std::vector<std::string> answe
 
 void UIManager::endQuiz()
 {
-	paused = false;
+	//paused = false;
 	in_quiz = false;
 }
 
 void UIManager::runTick(uint64_t delta)
 {
-	if(not in_quiz)
+	if (input_handler->isPause(true)) paused = not paused;
+
+	if(paused)
 	{
-		if (input_handler->isPause(true)) paused = not paused;
-
-		game_manager->setPaused(paused);
-
-		if (not paused)
-			return;
-
 		static int choice = 0;
 		if(input_handler->isPlayer(RIGHT, true))
 		{
@@ -185,8 +182,10 @@ void UIManager::runTick(uint64_t delta)
 			else
 				paused = false;
 		}
-	} else {
-		static std::vector<int> selected(3);
+	}
+
+	if (in_quiz) {
+		static std::vector<bool> selected(3);
 		static auto digits = digits_green;
 		renderer->addRenderItem(background_quiz, 0, 0, false, false, 9, true);
 		renderText("Q U E S T I O N", 45, 4, 100);
@@ -218,7 +217,13 @@ void UIManager::runTick(uint64_t delta)
 		if (input_handler->isAnswer(3, true))
 			selected[2] = not selected[2];
 
-		if (input_handler->isEnter(true))
+		if (input_handler->isEnter(true)) {
+			//in_quiz = false;
+			//game_manager->setPaused(false);
 			game_manager->getQuizManager()->provideAnswer(selected);
+			selected[0] = selected[1] = selected[2] = false;
+		}
 	}
+
+	game_manager->setPaused(paused or in_quiz);
 }

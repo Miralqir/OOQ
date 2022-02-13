@@ -59,7 +59,8 @@ void MapManager::loadMap(int map, bool respawn)
 
 		if (path.extension() == ".png") {
 			// load tile
-			int coll, layer;
+			bool coll;
+			int layer;
 			data >> coll >> layer;
 
 			tile[pos_x][pos_y][layer] = texture_manager->loadTexture(path);
@@ -79,11 +80,11 @@ void MapManager::getSpawn(int *x, int *y)
 	*y = spawn_y;
 }
 
-int MapManager::getCollision(int pos_x, int pos_y)
+ bool MapManager::getCollision(int pos_x, int pos_y)
 {
 	if (pos_x < 0 or pos_y < 0 or pos_x >= collision.size() or pos_y >=
 	    collision[pos_x].size())
-		return 1; // default collision for OOB
+		return true; // default collision for OOB
 
 	return collision[pos_x][pos_y];
 }
@@ -135,7 +136,7 @@ void MapManager::resizeMapStorage(int x, int y, bool absolute)
 		tile[i].resize(size_y);
 
 		for (int j = 0; j < tile[i].size(); ++j)
-			tile[i][j].resize(2, texture_manager->getMissingTexture());
+			tile[i][j].resize(2);
 
 		collision[i].resize(size_y, 1);
 	}
@@ -167,9 +168,11 @@ GameObject::GameObject(GameManager *parent) :
 	down.resize(1);
 	side.resize(1);
 
+	/*
 	up[0] = texture_manager->getMissingTexture();
 	down[0] = texture_manager->getMissingTexture();
 	side[0] = texture_manager->getMissingTexture();
+	*/
 }
 
 GameObject::~GameObject()
@@ -239,21 +242,21 @@ void GameObject::getSize(int *x, int *y)
 	*y = size_y;
 }
 
-int GameObject::checkMapCollision(int offset_x, int offset_y)
+bool GameObject::checkMapCollision(int offset_x, int offset_y)
 {
 	int tmp_x = map_x + offset_x;
 	int tmp_y = map_y + offset_y;
 
-	int coll = 0;
+	//bool coll = false;
 
 	for (int x = 0; x < size_x; ++x)
 		for (int y = 0; y < size_y; ++y)
-			coll = std::max(
-				coll, 
-				map_manager->getCollision(tmp_x + x, tmp_y + y)
-			);
+			//coll = coll or map_manager->getCollision(tmp_x + x, tmp_y + y);
+			if (map_manager->getCollision(tmp_x + x, tmp_y + y))
+				return true;
 
-	return coll;
+	//return coll;
+	return false;
 }
 
 bool GameObject::checkObjectCollision(int offset_x, int offset_y)
@@ -527,7 +530,7 @@ void Player::runTick(uint64_t delta)
 	    current_frame == stop_frame) {
 		if (((input_handler->isPlayer(UP) and type == 0) or 
 		    (input_handler->isPlayer2(UP) and type == 1)) and
-		    checkMapCollision(0, -1) < 1 and
+		    not checkMapCollision(0, -1) and
 		    not checkObjectCollision(0, -1)) {
 			setMapPos(map_x, map_y - 1);
 			//return;
@@ -535,7 +538,7 @@ void Player::runTick(uint64_t delta)
 
 		if (((input_handler->isPlayer(RIGHT) and type == 0) or
 		    (input_handler->isPlayer2(RIGHT) and type == 1)) and
-		    checkMapCollision(1, 0) < 1 and
+		    not checkMapCollision(1, 0) and
 		    not checkObjectCollision(1, 0)) {
 			setMapPos(map_x + 1, map_y);
 			//return;
@@ -543,7 +546,7 @@ void Player::runTick(uint64_t delta)
 
 		if (((input_handler->isPlayer(DOWN) and type == 0) or
 		    (input_handler->isPlayer2(DOWN) and type == 1)) and
-		    checkMapCollision(0, 1) < 1 and
+		    not checkMapCollision(0, 1) and
 		    not checkObjectCollision(0, 1)) {
 			setMapPos(map_x, map_y + 1);
 			//return;
@@ -551,7 +554,7 @@ void Player::runTick(uint64_t delta)
 
 		if (((input_handler->isPlayer(LEFT) and type == 0) or
 		    (input_handler->isPlayer2(LEFT) and type == 1)) and
-		    checkMapCollision(-1, 0) < 1 and
+		    not checkMapCollision(-1, 0) and
 		    not checkObjectCollision(-1, 0)) {
 			setMapPos(map_x - 1, map_y);
 			//return;
@@ -637,8 +640,13 @@ QuizManager::QuizManager(GameManager *parent) :
 		std::getline(question_file, temp.answers[0]);
 		std::getline(question_file, temp.answers[1]);
 		std::getline(question_file, temp.answers[2]);
-		question_file >> temp.correct[0] >> temp.correct[1]
-			      >> temp.correct[2] >> std::ws;
+		// ugly fix since vector<bool> is weird
+		bool correct0, correct1, correct2;
+		question_file >> correct0 >> correct1
+			      >> correct2 >> std::ws;
+		temp.correct[0] = correct0;
+		temp.correct[1] = correct1;
+		temp.correct[2] = correct2;
 
 		std::sort(temp.correct.begin(), temp.correct.end());
 
@@ -651,11 +659,11 @@ void QuizManager::startQuiz()
 	in_quiz = true;
 }
 
-void QuizManager::provideAnswer(std::vector<int> answer)
+void QuizManager::provideAnswer(std::vector<bool> answer)
 {
 	this->answer = answer;
 	this->answer.resize(3, 0);
-	std::sort(this->answer.begin(), this->answer.end());
+	//std::sort(this->answer.begin(), this->answer.end());
 	have_answer = true;
 }
 

@@ -37,6 +37,23 @@ public:
 	long getUsage();
 
 	bool isKeep();
+
+	bool operator==(const Texture &other) const;
+};
+
+class TextureAccess
+{
+private:
+	Texture *texture;
+
+public:
+	TextureAccess(Texture *texture = nullptr);
+	TextureAccess(const TextureAccess &other);
+	~TextureAccess();
+
+	Texture *operator()();
+
+	bool operator==(const TextureAccess &other) const;
 };
 
 class TextureManager
@@ -47,16 +64,16 @@ private:
 
 public:
 	TextureManager(Renderer *parent);
-	std::list<Texture>::iterator getMissingTexture();
-	std::list<Texture>::iterator loadTexture(std::filesystem::path path);
-	void unloadTexture(std::list<Texture>::iterator texture);
+
+	TextureAccess getMissingTexture();
+	TextureAccess loadTexture(std::filesystem::path path);
 	void cleanup();
 };
 
 class RenderItem
 {
 private:
-	std::list<Texture>::iterator texture;
+	TextureAccess texture;
 	int pos_x;
 	int pos_y;
 	bool flip_vert;
@@ -65,16 +82,16 @@ private:
 	bool overlay;
 
 public:
-	RenderItem(std::list<Texture>::iterator texture, int pos_x, int pos_y, bool flip_vert, bool flip_horz, int layer, bool overlay = false);
+	RenderItem(TextureAccess texture, int pos_x, int pos_y, bool flip_vert, bool flip_horz, int layer, bool overlay = false);
 
 	/* are these setters really necessary?
-	void setTexture(std::list<Texture>::iterator texture);
+	void setTexture(TextureAccess texture);
 	void setX(int pos_x);
 	void setY(int pos_y);
 	void setLayer(int layer);
 	*/
 
-	std::list<Texture>::iterator getTexture() const;
+	TextureAccess getTexture() const;
 	int getX() const;
 	int getY() const;
 	bool getFlipVert() const;
@@ -82,8 +99,10 @@ public:
 	int getLayer() const;
 	bool getOverlay() const;
 
-	bool operator<(const RenderItem &other) const;
-	bool operator>(const RenderItem &other) const;
+	auto operator<=>(const RenderItem &other) const;
+	// defined by compiler since C++20
+	//bool operator<(const RenderItem &other) const;
+	//bool operator>(const RenderItem &other) const;
 };
 
 class Renderer
@@ -108,7 +127,7 @@ public:
 	void setCenter(int x, int y);
 
 	void addRenderItem(const RenderItem &item);
-	void addRenderItem(std::list<Texture>::iterator texture, int pos_x, int pos_y, bool flip_vert, bool flip_horz, int layer, bool overlay = false);
+	void addRenderItem(TextureAccess texture, int pos_x, int pos_y, bool flip_vert, bool flip_horz, int layer, bool overlay = false);
 
 	void render();
 };

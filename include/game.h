@@ -26,8 +26,8 @@ private:
 
 	int current_map;
 	int spawn_x, spawn_y;
-	std::vector<std::vector<std::vector<std::list<Texture>::iterator>>> tile;
-	std::vector<std::vector<int>> collision;
+	std::vector<std::vector<std::vector<TextureAccess>>> tile;
+	std::vector<std::vector<bool>> collision;
 
 public:
 	MapManager(GameManager *parent);
@@ -35,7 +35,7 @@ public:
 	void loadMap(int map, bool respawn = false);
 
 	void getSpawn(int *x, int *y);
-	int getCollision(int pos_x, int pos_y);
+	bool getCollision(int pos_x, int pos_y);
 
 	void getSize(int *x, int *y);
 
@@ -56,9 +56,9 @@ protected:
 	// render stuff
 	ObjectWalker *object_walker;
 
-	std::vector<std::list<Texture>::iterator> up;
-	std::vector<std::list<Texture>::iterator> down;
-	std::vector<std::list<Texture>::iterator> side;
+	std::vector<TextureAccess> up;
+	std::vector<TextureAccess> down;
+	std::vector<TextureAccess> side;
 
 	int current_frame;
 	int loop_frame;
@@ -94,7 +94,7 @@ public:
 	void setMapPos(int x, int y, bool anim = true);
 	void getMapPos(int *x, int *y);
 	void getSize(int *x, int *y);
-	int checkMapCollision(int offset_x, int offset_y);
+	bool checkMapCollision(int offset_x, int offset_y);
 	bool checkObjectCollision(int offset_x, int offset_y);
 
 	void render();
@@ -191,7 +191,7 @@ private:
 	struct QUESTION {
 		std::string text;
 		std::vector<std::string> answers;
-		std::vector<int> correct;
+		std::vector<bool> correct;
 	};
 
 	std::vector<QUESTION> questions;
@@ -199,13 +199,13 @@ private:
 	bool in_quiz;
 	int question_asked;
 	bool have_answer;
-	std::vector<int> answer;
+	std::vector<bool> answer;
 
 public:
 	QuizManager(GameManager *parent);
 
 	void startQuiz();
-	void provideAnswer(std::vector<int> answer);
+	void provideAnswer(std::vector<bool> answer);
 
 	void runTick(uint64_t delta);
 };

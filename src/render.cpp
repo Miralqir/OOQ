@@ -3,6 +3,7 @@
 #include "config.h"
 
 #include <stdexcept>
+#include <compare>
 #include <sstream>
 
 #include <SDL2/SDL_image.h>
@@ -13,7 +14,6 @@ Texture::Texture(SDL_Renderer *renderer, std::filesystem::path path,
 	usage(1),
 	keep(keep)
 {
-
 	SDL_Surface *surface;
 	if (!path.empty() and std::filesystem::exists(path)) {
 		surface = IMG_Load(path.c_str());
@@ -88,6 +88,41 @@ bool Texture::isKeep()
 	return keep;
 }
 
+bool Texture::operator==(const Texture &other) const
+{
+	return path == other.path;
+}
+
+TextureAccess::TextureAccess(Texture *texture) :
+	texture(texture)
+{
+	if (texture)
+		texture->addUsage();
+}
+
+TextureAccess::TextureAccess(const TextureAccess &other) :
+	texture(other.texture)
+{
+	if (texture)
+		texture->addUsage();
+}
+
+TextureAccess::~TextureAccess()
+{
+	if (texture)
+		texture->remUsage();
+}
+
+Texture *TextureAccess::operator()()
+{
+	return texture;
+}
+
+bool TextureAccess::operator==(const TextureAccess &other) const
+{
+	return texture == other.texture;
+}
+
 TextureManager::TextureManager(Renderer *parent) :
 	parent(parent)
 {
@@ -95,6 +130,19 @@ TextureManager::TextureManager(Renderer *parent) :
 	textures.emplace_back(parent->renderer, "", true);
 }
 
+TextureAccess TextureManager::getMissingTexture()
+{
+	return TextureAccess(&textures.front());
+}
+
+TextureAccess TextureManager::loadTexture(std::filesystem::path path)
+{
+	// TODO: check if path is already loaded, return that instead
+	textures.emplace_back(parent->renderer, path);
+	return TextureAccess(&textures.back());
+}
+
+/*
 std::list<Texture>::iterator TextureManager::getMissingTexture()
 {
 	return textures.begin();
@@ -112,6 +160,7 @@ void TextureManager::unloadTexture(std::list<Texture>::iterator texture)
 {
 	texture->remUsage();
 }
+*/
 
 void TextureManager::cleanup()
 {
@@ -123,7 +172,7 @@ void TextureManager::cleanup()
 			it++;
 }
 
-RenderItem::RenderItem(std::list<Texture>::iterator texture, int pos_x, int pos_y, bool flip_vert, bool flip_horz, int layer, bool overlay) :
+RenderItem::RenderItem(TextureAccess texture, int pos_x, int pos_y, bool flip_vert, bool flip_horz, int layer, bool overlay) :
 	texture(texture),
 	pos_x(pos_x),
 	pos_y(pos_y),
@@ -134,7 +183,7 @@ RenderItem::RenderItem(std::list<Texture>::iterator texture, int pos_x, int pos_
 {}
 
 /*
-void RenderItem::setTexture(std::list<Texture>::iterator texture)
+void RenderItem::setTexture(TextureAccess texture)
 {
         this->texture = texture;
 }
@@ -155,7 +204,7 @@ void RenderItem::setLayer(int layer)
 }
 */
 
-std::list<Texture>::iterator RenderItem::getTexture() const
+TextureAccess RenderItem::getTexture() const
 {
 	return texture;
 }
@@ -190,6 +239,16 @@ bool RenderItem::getOverlay() const
 	return overlay;
 }
 
+auto RenderItem::operator<=>(const RenderItem &other) const
+{
+	if (layer == other.layer)
+		return std::strong_ordering::equal;
+	else if (layer < other.layer)
+		return std::strong_ordering::less;
+	return std::strong_ordering::greater;
+}
+
+/*
 bool RenderItem::operator<(const RenderItem &other) const
 {
 	return layer < other.layer;
@@ -199,7 +258,7 @@ bool RenderItem::operator>(const RenderItem &other) const
 {
 	return layer > other.layer;
 }
-
+*/
 
 Renderer::Renderer() :
 	center_x(0),
@@ -267,7 +326,7 @@ void Renderer::addRenderItem(const RenderItem &item)
 	render_queue.push(item);
 }
 
-void Renderer::addRenderItem(std::list<Texture>::iterator texture, int pos_x, int pos_y, bool flip_vert, bool flip_horz, int layer, bool overlay)
+void Renderer::addRenderItem(TextureAccess texture, int pos_x, int pos_y, bool flip_vert, bool flip_horz, int layer, bool overlay)
 {
 	render_queue.emplace(texture, pos_x, pos_y, flip_vert, flip_horz, layer, overlay);
 }
@@ -284,30 +343,34 @@ void Renderer::render()
 		auto render_item = render_queue.top();
 		auto tex = render_item.getTexture();
 
-		SDL_Rect pos;
-		if (not render_item.getOverlay())
-			pos = {
-				.x = render_item.getX()
-			     	     - center_x + screen_width / 2,
-				.y = render_item.getY()
-			     	     - center_y + screen_height / 2,
-				.w = tex->getWidth(),
-				.h = tex->getHeight()
-			};
-		else
-			pos = {
-				.x = render_item.getX(),
-				.y = render_item.getY(),
-				.w = tex->getWidth(),
-				.h = tex->getHeight()
-			};
+		if (tex()) {
+			SDL_Rect pos;
+			if (not render_item.getOverlay())
+				pos = {
+					.x = render_item.getX()
+			     	     	     - center_x + screen_width / 2,
+					.y = render_item.getY()
+			     	             - center_y + screen_height / 2,
+					.w = tex()->getWidth(),
+					.h = tex()->getHeight()
+				};
+			else
+				pos = {
+					.x = render_item.getX(),
+					.y = render_item.getY(),
+					.w = tex()->getWidth(),
+					.h = tex()->getHeight()
+				};
 
-		SDL_RendererFlip flip = static_cast<SDL_RendererFlip>(
-			(SDL_FLIP_VERTICAL and render_item.getFlipVert()) |
-			(SDL_FLIP_VERTICAL and render_item.getFlipHorz())
-		);
+			SDL_RendererFlip flip = static_cast<SDL_RendererFlip>(
+				(SDL_FLIP_VERTICAL and 
+				 render_item.getFlipVert()) |
+				(SDL_FLIP_VERTICAL and
+				 render_item.getFlipHorz())
+			);
 
-		SDL_RenderCopyEx(renderer, tex->getTexture(), NULL, &pos, 0, NULL, flip);
+			SDL_RenderCopyEx(renderer, tex()->getTexture(), NULL, &pos, 0, NULL, flip);
+		}
 
 		render_queue.pop();
 	}

@@ -30,24 +30,24 @@ private:
 	std::string question;
 	std::vector<std::string> answers;
 
-	std::list<Texture>::iterator background;
-	std::list<Texture>::iterator background_quiz;
-	std::list<Texture>::iterator exit_button;
-	std::list<Texture>::iterator continue_button;
-	std::list<Texture>::iterator selected_exit_button;
-	std::list<Texture>::iterator selected_continue_button;
-	std::list<Texture>::iterator time_edit1;
-	std::list<Texture>::iterator time_edit2;
-	std::list<Texture>::iterator text_box_short1;
-	std::list<Texture>::iterator text_box_short2;
-	std::list<Texture>::iterator text_box_long;
-	std::list<Texture>::iterator text_box;
-	std::list<Texture>::iterator sign;
+	TextureAccess background;
+	TextureAccess background_quiz;
+	TextureAccess exit_button;
+	TextureAccess continue_button;
+	TextureAccess selected_exit_button;
+	TextureAccess selected_continue_button;
+	TextureAccess time_edit1;
+	TextureAccess time_edit2;
+	TextureAccess text_box_short1;
+	TextureAccess text_box_short2;
+	TextureAccess text_box_long;
+	TextureAccess text_box;
+	TextureAccess sign;
 
-	std::vector<std::list<Texture>::iterator> letters;
-	std::vector<std::list<Texture>::iterator> digits_black;
-	std::vector<std::list<Texture>::iterator> digits_white;
-	std::vector<std::list<Texture>::iterator> digits_green;
+	std::vector<TextureAccess> letters;
+	std::vector<TextureAccess> digits_black;
+	std::vector<TextureAccess> digits_white;
+	std::vector<TextureAccess> digits_green;
 
 
 public:
@@ -55,7 +55,7 @@ public:
 
 	void runTick(uint64_t delta);
 	void renderText(std::string text, int pos_x, int pos_y, int max_x);
-	void renderNumber(std::vector<std::list<Texture>::iterator> type_digits, int number, int pos_x, int pos_y);
+	void renderNumber(std::vector<TextureAccess> type_digits, int number, int pos_x, int pos_y);
 	void renderTimePart(uint64_t time, int pos_x, int pos_y, int* final_pos);
 	void renderTime(uint64_t time, int pos_x, int pos_y);
 	void displayQuiz(std::string question, std::vector<std::string> answers);
