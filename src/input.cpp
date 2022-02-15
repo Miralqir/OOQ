@@ -167,5 +167,7 @@ bool InputHandler::isAnswer(int ans, bool clear)
 	if (ans < 1 or ans > 3)
 		return false;
 
-	return answer[ans - 1];
+	bool ret = answer[ans - 1];
+	if (clear) answer[ans - 1] = false;
+	return ret;
 }
