@@ -6,7 +6,13 @@
 #include <compare>
 #include <sstream>
 
+#ifdef __unix__
 #include <SDL2/SDL_image.h>
+#elif _WIN32
+#include <SDL_image.h>
+#else
+#error Unsupported platform
+#endif
 
 Texture::Texture(Renderer *renderer, std::filesystem::path path, bool keep) :
 	path(path),
@@ -15,7 +21,7 @@ Texture::Texture(Renderer *renderer, std::filesystem::path path, bool keep) :
 {
 	SDL_Surface *surface;
 	if (!path.empty() and std::filesystem::exists(path)) {
-		surface = IMG_Load(path.c_str());
+		surface = IMG_Load(path.string().c_str());
 
 		if (!surface)
 			throw std::runtime_error(IMG_GetError());

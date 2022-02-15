@@ -6,8 +6,15 @@
 #include <functional>
 #include <filesystem>
 
+#ifdef __unix__
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
+#elif _WIN32
+#include <SDL.h>
+#include <SDL_ttf.h>
+#else
+#error Unsupported platform
+#endif
 
 #define MAX_TILE_LAYER 5
 

@@ -1,6 +1,12 @@
 #include "input.h"
 
+#ifdef __unix__
 #include <SDL2/SDL.h>
+#elif _WIN32
+#include <SDL.h>
+#else
+#error Unsupported platform
+#endif
 
 InputHandler::InputHandler() :
 	quit(false),
