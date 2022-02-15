@@ -48,3 +48,38 @@ concentration of the enzyme
 concentration of the substrate
 concentration of the catalyst
 0 1 0
+Which one of the below is a closed process:
+PFR
+PFR in series
+PFR in parallel
+1 0 0
+What is the molecular formula for a bacterial cell?
+C2H2O2N
+C4H7O2N
+C3H4O3N
+0 1 0
+Which of the following is not an economic source of bulk carbon suitable for large scale industrial microbial processes?
+Corn steep liquior
+Sucrose
+Whey
+1 0 0
+Which of the following traits would be important for a microorganism used in industrial processes?
+Prokaryotic
+Slow growth
+Genetic stability
+0 0 1
+Which chemical is usually used before the Bacterial transformation process?
+Calcium chloride
+Potassium chloride
+Ferric chloride
+1 0 0
+Concentration of broth: The spent medium is concentrated if the product is extracellular:
+True
+False
+Can not say
+1 0 0
+Which components of cell help in the manufacturing of new biological products?
+Carbohydrates
+Lipids
+Proteins
+0 0 1
