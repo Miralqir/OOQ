@@ -648,8 +648,6 @@ QuizManager::QuizManager(GameManager *parent) :
 		temp.correct[1] = correct1;
 		temp.correct[2] = correct2;
 
-		std::sort(temp.correct.begin(), temp.correct.end());
-
 		questions.push_back(temp);
 	}
 }
@@ -663,7 +661,6 @@ void QuizManager::provideAnswer(std::vector<bool> answer)
 {
 	this->answer = answer;
 	this->answer.resize(3, 0);
-	//std::sort(this->answer.begin(), this->answer.end());
 	have_answer = true;
 }
 
