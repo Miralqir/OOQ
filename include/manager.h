@@ -33,5 +33,5 @@ public:
 
 	void quit();
 
-	int run();
+	int operator()();
 };

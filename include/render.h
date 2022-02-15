@@ -7,8 +7,11 @@
 #include <filesystem>
 
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
 
 #define MAX_TILE_LAYER 5
+
+enum COLOR {BLACK, GRAY, WHITE, RED, GREEN, BLUE};
 
 class Renderer;
 
@@ -23,7 +26,9 @@ private:
 	bool keep;
 
 public:
-	Texture(SDL_Renderer *renderer, std::filesystem::path path, bool keep = false);
+
+	Texture(Renderer *renderer, std::filesystem::path path, bool keep = false);
+	Texture(Renderer *renderer, std::string text, COLOR color = BLACK, bool keep = false);
 	~Texture();
 
 	SDL_Texture *getTexture();
@@ -67,6 +72,7 @@ public:
 
 	TextureAccess getMissingTexture();
 	TextureAccess loadTexture(std::filesystem::path path);
+	TextureAccess makeText(std::string text, COLOR color = BLACK);
 	void cleanup();
 };
 
@@ -111,17 +117,18 @@ private:
 	SDL_Window *window;
 	SDL_Renderer *renderer;
 	TextureManager *texture_manager;
+	TTF_Font *font;
 	int center_x, center_y;
 	std::priority_queue<RenderItem, std::vector<RenderItem>, std::greater<RenderItem>>
 	                render_queue;
-
-	friend class TextureManager;
 
 public:
 	Renderer();
 	~Renderer();
 
+	SDL_Renderer *getRenderer();
 	TextureManager *getTextureManager();
+	TTF_Font *getFont();
 
 	void setSize(int width, int height);
 	void setCenter(int x, int y);
@@ -129,5 +136,5 @@ public:
 	void addRenderItem(const RenderItem &item);
 	void addRenderItem(TextureAccess texture, int pos_x, int pos_y, bool flip_vert, bool flip_horz, int layer, bool overlay = false);
 
-	void render();
+	void operator()();
 };

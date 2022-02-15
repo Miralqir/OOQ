@@ -9,6 +9,7 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
 
 Manager::Manager(int argc, char **argv) :
 	argc(argc),
@@ -23,6 +24,9 @@ Manager::Manager(int argc, char **argv) :
 	if (IMG_Init(IMG_INIT_PNG) != IMG_INIT_PNG)
 		throw std::runtime_error(IMG_GetError());
 
+	if (TTF_Init() != 0)
+		throw std::runtime_error(TTF_GetError());
+
 	renderer = new Renderer();
 	input_handler = new InputHandler();
 	game_manager = new GameManager(this);
@@ -35,6 +39,7 @@ Manager::~Manager()
 	delete game_manager;
 	delete input_handler;
 	delete renderer;
+	TTF_Quit();
 	IMG_Quit();
 	SDL_Quit();
 }
@@ -64,7 +69,7 @@ void Manager::quit()
 	is_quit = true;
 }
 
-int Manager::run()
+int Manager::operator()()
 {
 	uint64_t delta = 0;
 
@@ -87,7 +92,7 @@ int Manager::run()
 
 		ui_manager->runTick(delta);
 
-		renderer->render();
+		(*renderer)();
 
 		// limit fps
 		static const uint64_t max_fps = 60;
@@ -98,7 +103,6 @@ int Manager::run()
 
 		if (delta < min_ticks)
 			SDL_Delay(min_ticks - delta);
-
 	}
 
 	return 0;

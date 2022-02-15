@@ -8,8 +8,7 @@
 
 #include <SDL2/SDL_image.h>
 
-Texture::Texture(SDL_Renderer *renderer, std::filesystem::path path,
-                 bool keep) :
+Texture::Texture(Renderer *renderer, std::filesystem::path path, bool keep) :
 	path(path),
 	usage(1),
 	keep(keep)
@@ -25,7 +24,8 @@ Texture::Texture(SDL_Renderer *renderer, std::filesystem::path path,
 		surface = SDL_CreateRGBSurface(
 				0, 
 				TILE_SIZE, TILE_SIZE, 32,
-				0, 0, 0, 0);
+				0, 0, 0, 0
+			);
 
 		if (!surface)
 			throw std::runtime_error(SDL_GetError());
@@ -33,7 +33,61 @@ Texture::Texture(SDL_Renderer *renderer, std::filesystem::path path,
 		SDL_FillRect(surface, NULL, SDL_MapRGB(surface->format, 169, 169, 169));
 	}
 
-	texture = SDL_CreateTextureFromSurface(renderer, surface);
+	texture = SDL_CreateTextureFromSurface(renderer->getRenderer(), surface);
+
+	SDL_FreeSurface(surface);
+
+	if (!texture)
+		throw std::runtime_error(SDL_GetError());
+
+	SDL_QueryTexture(texture, NULL, NULL, &width, &height);
+}
+
+Texture::Texture(Renderer *renderer, std::string text, COLOR color, bool keep) :
+	path(""),
+	usage(1),
+	keep(keep)
+{
+	// TODO: implement different colors
+	SDL_Color color_real = {0, 0, 0};
+
+	switch (color) {
+	default:
+	case BLACK:
+		color_real = {0, 0, 0};
+		break;
+
+	case GRAY:
+		color_real = {169, 169, 169};
+		break;
+
+	case WHITE:
+		color_real = {255, 255, 255};
+		break;
+
+	case RED:
+		color_real = {255, 0, 0};
+		break;
+
+	case GREEN:
+		color_real = {0, 255, 0};
+		break;
+
+	case BLUE:
+		color_real = {0, 0, 255};
+		break;
+	}
+
+	SDL_Surface *surface = TTF_RenderUTF8_Solid(
+			renderer->getFont(), 
+			text.c_str(), 
+			color_real
+		);
+
+	if (!surface)
+		throw std::runtime_error(TTF_GetError());
+
+	texture = SDL_CreateTextureFromSurface(renderer->getRenderer(), surface);
 
 	SDL_FreeSurface(surface);
 
@@ -127,7 +181,7 @@ TextureManager::TextureManager(Renderer *parent) :
 	parent(parent)
 {
 	// initialize missing texture
-	textures.emplace_back(parent->renderer, "", true);
+	textures.emplace_back(parent, std::filesystem::path(""), true);
 }
 
 TextureAccess TextureManager::getMissingTexture()
@@ -138,29 +192,15 @@ TextureAccess TextureManager::getMissingTexture()
 TextureAccess TextureManager::loadTexture(std::filesystem::path path)
 {
 	// TODO: check if path is already loaded, return that instead
-	textures.emplace_back(parent->renderer, path);
+	textures.emplace_back(parent, path);
 	return TextureAccess(&textures.back());
 }
 
-/*
-std::list<Texture>::iterator TextureManager::getMissingTexture()
+TextureAccess TextureManager::makeText(std::string text, COLOR color)
 {
-	return textures.begin();
+	textures.emplace_back(parent, text, color);
+	return TextureAccess(&textures.back());
 }
-
-std::list<Texture>::iterator TextureManager::loadTexture(
-        std::filesystem::path path)
-{
-	// TODO: check if path is already loaded, return that instead
-	textures.emplace_back(parent->renderer, path);
-	return --textures.end();
-}
-
-void TextureManager::unloadTexture(std::list<Texture>::iterator texture)
-{
-	texture->remUsage();
-}
-*/
 
 void TextureManager::cleanup()
 {
@@ -273,7 +313,7 @@ Renderer::Renderer() :
 	                 SDL_WINDOW_RESIZABLE
 	         );
 
-	if (!window)
+	if (not window)
 		throw std::runtime_error(SDL_GetError());
 
 	renderer = SDL_CreateRenderer(
@@ -284,29 +324,45 @@ Renderer::Renderer() :
 	                   //SDL_RENDERER_TARGETTEXTURE
 	           );
 
-	if (!renderer)
+	if (not renderer)
 		throw std::runtime_error(SDL_GetError());
 
-	texture_manager = new TextureManager(this);
-
 	SDL_Surface *surface = IMG_Load("data/logo/WSS.png");
-	if (!surface)
+	if (not surface)
 		throw std::runtime_error(IMG_GetError());
 
 	SDL_SetWindowIcon(window, surface);
 	SDL_FreeSurface(surface);
+
+	texture_manager = new TextureManager(this);
+
+	font = TTF_OpenFont("data/font/Hack-Regular.ttf", 10);
+
+	if (not font)
+		throw std::runtime_error(TTF_GetError());
 }
 
 Renderer::~Renderer()
 {
+	TTF_CloseFont(font);
 	delete texture_manager;
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 }
 
+SDL_Renderer *Renderer::getRenderer()
+{
+	return renderer;
+}
+
 TextureManager *Renderer::getTextureManager()
 {
 	return texture_manager;
+}
+
+TTF_Font *Renderer::getFont()
+{
+	return font;
 }
 
 void Renderer::setSize(int width, int height)
@@ -331,7 +387,7 @@ void Renderer::addRenderItem(TextureAccess texture, int pos_x, int pos_y, bool f
 	render_queue.emplace(texture, pos_x, pos_y, flip_vert, flip_horz, layer, overlay);
 }
 
-void Renderer::render()
+void Renderer::operator()()
 {
 	int screen_width, screen_height;
 
