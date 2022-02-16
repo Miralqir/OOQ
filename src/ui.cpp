@@ -352,12 +352,13 @@ int UIManager::printText(std::string text, int x, int y, int max_char, int layer
 
 void UIManager::openDocumentation()
 {
-	static const std::filesystem::path course("data/course.pdf");
+	static std::filesystem::path course("data/course.pdf");
 
 #ifdef __unix__
 	if (fork() == 0)
 		execl("/usr/bin/xdg-open", "xdg-open", course.string().c_str(), (char *)0);
 #elif _WIN32
+	course.make_preferred();
 	ShellExecuteA(0, 0, course.string().c_str(), 0, 0, SW_SHOW);
 #else
 #error Unsupported platform
