@@ -17,7 +17,7 @@
 
 Texture::Texture(Renderer *renderer, std::filesystem::path path, bool keep) :
 	path(path),
-	usage(1),
+	usage(0),
 	keep(keep)
 {
 	SDL_Surface *surface;
@@ -52,10 +52,9 @@ Texture::Texture(Renderer *renderer, std::filesystem::path path, bool keep) :
 
 Texture::Texture(Renderer *renderer, std::string text, COLOR color, bool keep) :
 	path(""),
-	usage(1),
+	usage(0),
 	keep(keep)
 {
-	// TODO: implement different colors
 	SDL_Color color_real = {0, 0, 0};
 
 	switch (color) {
@@ -179,6 +178,19 @@ Texture *TextureAccess::operator()()
 	return texture;
 }
 
+TextureAccess &TextureAccess::operator=(const TextureAccess &other)
+{
+	if (this == &other)
+		return *this;
+
+	texture = other.texture;
+
+	if (texture)
+		texture->addUsage();
+
+	return *this;
+}
+
 bool TextureAccess::operator==(const TextureAccess &other) const
 {
 	return texture == other.texture;
@@ -198,7 +210,10 @@ TextureAccess TextureManager::getMissingTexture()
 
 TextureAccess TextureManager::loadTexture(std::filesystem::path path)
 {
-	// TODO: check if path is already loaded, return that instead
+	for (auto it = textures.begin(); it != textures.end(); ++it)
+		if (it->getPath() == path)
+			return TextureAccess(&(*it));
+
 	textures.emplace_back(parent, path);
 	return TextureAccess(&textures.back());
 }
@@ -211,12 +226,14 @@ TextureAccess TextureManager::makeText(std::string text, COLOR color)
 
 void TextureManager::cleanup()
 {
+	size_t size = textures.size();
 	auto it = textures.begin();
 	while (it != textures.end())
 		if (it->getUsage() < 1 and not it->isKeep())
 			it = textures.erase(it);
 		else
 			it++;
+	size = textures.size();
 }
 
 RenderItem::RenderItem(TextureAccess texture, int pos_x, int pos_y, bool flip_vert, bool flip_horz, int layer, bool overlay) :
