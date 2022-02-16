@@ -8,7 +8,10 @@
 #ifdef __unix__
 #include <unistd.h>
 #elif _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
 #include <shellapi.h>
+#include <ciso646>
 #else
 #error Unsupported platform
 #endif
@@ -353,9 +356,9 @@ void UIManager::openDocumentation()
 
 #ifdef __unix__
 	if (fork() == 0)
-		execl("/usr/bin/xdg-open", "xdg-open", course.c_str(), (char *)0);
+		execl("/usr/bin/xdg-open", "xdg-open", course.string().c_str(), (char *)0);
 #elif _WIN32
-	ShellExecute(0, 0, course.c_str(), 0, 0, SW_SHOW);
+	ShellExecuteA(0, 0, course.string().c_str(), 0, 0, SW_SHOW);
 #else
 #error Unsupported platform
 #endif

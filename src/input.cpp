@@ -3,6 +3,7 @@
 #ifdef __unix__
 #include <SDL2/SDL.h>
 #elif _WIN32
+#include <ciso646>
 #include <SDL.h>
 #else
 #error Unsupported platform

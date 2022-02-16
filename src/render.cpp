@@ -9,6 +9,7 @@
 #ifdef __unix__
 #include <SDL2/SDL_image.h>
 #elif _WIN32
+#include <ciso646>
 #include <SDL_image.h>
 #else
 #error Unsupported platform

@@ -9,6 +9,10 @@
 #include <random>
 #include <fstream>
 
+#if _WIN32
+#include <ciso646>
+#endif
+
 MapManager::MapManager(GameManager *parent) :
 	parent(parent),
 	renderer(parent->getRenderer()),

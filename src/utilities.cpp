@@ -1,5 +1,9 @@
 #include "utilities.h"
 
+#if _WIN32
+#include <ciso646>
+#endif
+
 int sgn(int nr)
 {
 	if (nr == 0)
