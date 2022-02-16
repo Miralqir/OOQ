@@ -99,11 +99,10 @@ int Manager::operator()()
 
 		game_manager->runTick(delta);
 
+		//ui_manager->runTick(delta);
 		(*ui_manager)(delta);
 
 		(*renderer)();
-
-		renderer->getTextureManager()->cleanup();
 
 		// limit fps
 		static const uint64_t max_fps = 60;

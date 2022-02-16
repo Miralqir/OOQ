@@ -64,7 +64,7 @@ public:
 	~TextureAccess();
 
 	Texture *operator()();
-	TextureAccess &operator=(const TextureAccess &other);
+
 	bool operator==(const TextureAccess &other) const;
 };
 
