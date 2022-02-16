@@ -1,0 +1,4 @@
+pickup
+data/sprite/pickup/pickup.png
+1 1
+To the South, as far as eye can see;Near a big glass building will the next item be

@@ -1,0 +1,4 @@
+pickup
+data/sprite/pickup/pickup.png
+1 1
+Between 2 buildings lies a bridge;No earthquake can make it twitch;This is where the item lies;Between the columns in disguise 

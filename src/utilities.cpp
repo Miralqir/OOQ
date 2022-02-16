@@ -33,9 +33,18 @@ void getTime(uint64_t time, uint64_t *hours, uint64_t *minutes, uint64_t *second
 	static const uint64_t HOURS_IN_MILLISECONDS = 3600000;
 	static const uint64_t MINUTES_IN_MILLISECONDS = 60000;
 	static const uint64_t SECONDS_IN_MILLISECONDS = 1000;
-	static const uint64_t days = time / DAYS_IN_MILLISECONDS;
 
-	*hours = (time - days * DAYS_IN_MILLISECONDS) / HOURS_IN_MILLISECONDS;
-	*minutes = (time - days * DAYS_IN_MILLISECONDS - (*hours) * HOURS_IN_MILLISECONDS) / MINUTES_IN_MILLISECONDS;
-	*seconds = (time - days*DAYS_IN_MILLISECONDS - (*hours) * HOURS_IN_MILLISECONDS - (*minutes) * MINUTES_IN_MILLISECONDS) / SECONDS_IN_MILLISECONDS;
+	uint64_t d = time / DAYS_IN_MILLISECONDS;
+	uint64_t h = (time - d * DAYS_IN_MILLISECONDS) / HOURS_IN_MILLISECONDS;
+	uint64_t m = (time - d * DAYS_IN_MILLISECONDS - h * HOURS_IN_MILLISECONDS) / MINUTES_IN_MILLISECONDS;
+	uint64_t s = (time - d * DAYS_IN_MILLISECONDS - h * HOURS_IN_MILLISECONDS - m * MINUTES_IN_MILLISECONDS) / SECONDS_IN_MILLISECONDS;
+
+	if (hours)
+		*hours = h;
+
+	if (minutes)
+		*minutes = m;
+
+	if (seconds)
+		*seconds = s;
 };

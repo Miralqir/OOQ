@@ -6,11 +6,7 @@
 
 #include <list>
 #include <vector>
-#include <algorithm>
-#include <sstream>
 #include <string>
-#include <iterator>
-#include <cmath>
 
 class Manager;
 class GameManager;
@@ -24,40 +20,42 @@ private:
 	InputHandler *input_handler;
 	GameManager *game_manager;
 
-	bool paused;
+	const uint64_t FRAMETIME = 100;
+	uint64_t tick;
+	uint64_t splash_deadline;
+
+	bool in_menu;
+	uint64_t menu_deadline;
+	unsigned int menu_counter;
+
 	bool in_quiz;
+	uint64_t quiz_deadline;
+	unsigned int quiz_counter;
 
 	std::string question;
 	std::vector<std::string> answers;
 
-	TextureAccess background;
-	TextureAccess background_quiz;
-	TextureAccess exit_button;
-	TextureAccess continue_button;
-	TextureAccess selected_exit_button;
-	TextureAccess selected_continue_button;
-	TextureAccess time_edit1;
-	TextureAccess time_edit2;
-	TextureAccess text_box_short1;
-	TextureAccess text_box_short2;
-	TextureAccess text_box_long;
-	TextureAccess text_box;
-	TextureAccess sign;
+	TextureAccess splash;
+	std::vector<TextureAccess> menu;
+	std::vector<TextureAccess> quiz;
 
-	std::vector<TextureAccess> letters;
-	std::vector<TextureAccess> digits_black;
-	std::vector<TextureAccess> digits_white;
-	std::vector<TextureAccess> digits_green;
+	TextureAccess continue_btn;
+	TextureAccess documentation_btn;
+	TextureAccess exit_btn;
+	TextureAccess submit_btn;
 
+	TextureAccess minimap;
+	TextureAccess point;
 
 public:
 	UIManager(Manager *parent);
 
-	void runTick(uint64_t delta);
-	void renderText(std::string text, int pos_x, int pos_y, int max_x);
-	void renderNumber(std::vector<TextureAccess> type_digits, int number, int pos_x, int pos_y);
-	void renderTimePart(uint64_t time, int pos_x, int pos_y, int* final_pos);
-	void renderTime(uint64_t time, int pos_x, int pos_y);
 	void displayQuiz(std::string question, std::vector<std::string> answers);
 	void endQuiz();
+
+	void operator()(uint64_t delta);
+
+private:
+	int printText(std::string text, int x, int y, int max_char, int layer, COLOR color = BLACK);
+	void openDocumentation();
 };

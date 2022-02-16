@@ -1,4 +1,4 @@
 pickup
 data/sprite/pickup/pickup.png
 1 1
-Hint2
+A yellow and red dotted building;Lies tall ahead of you;No further than that point on;An item you will stumble upon

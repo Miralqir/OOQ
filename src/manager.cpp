@@ -98,7 +98,8 @@ int Manager::operator()()
 
 		game_manager->runTick(delta);
 
-		ui_manager->runTick(delta);
+		//ui_manager->runTick(delta);
+		(*ui_manager)(delta);
 
 		(*renderer)();
 

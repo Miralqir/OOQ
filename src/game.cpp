@@ -8,7 +8,6 @@
 #include <utility>
 #include <random>
 #include <fstream>
-#include <iostream>
 
 MapManager::MapManager(GameManager *parent) :
 	parent(parent),
@@ -822,7 +821,7 @@ void GameManager::updateCollision()
 		collision.resize(size_x);
 
 		for(int i = 0; i < collision.size(); ++i)
-			collision[i].resize(size_x);
+			collision[i].resize(size_y);
 	}
 
 	// construct up to date collision map
@@ -902,6 +901,10 @@ void GameManager::useCollectible()
 void GameManager::addHint(std::string hint)
 {
 	hints.push_back(hint);
+
+	// do not keep all hints
+	while (hints.size() > 1)
+		hints.pop_front();
 }
 
 std::list<std::string> GameManager::getHints()
