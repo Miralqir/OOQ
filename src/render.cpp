@@ -183,6 +183,9 @@ TextureAccess &TextureAccess::operator=(const TextureAccess &other)
 	if (this == &other)
 		return *this;
 
+	if (texture)
+		texture->remUsage();
+
 	texture = other.texture;
 
 	if (texture)
