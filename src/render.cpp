@@ -17,7 +17,7 @@
 
 Texture::Texture(Renderer *renderer, std::filesystem::path path, bool keep) :
 	path(path),
-	usage(1),
+	usage(0),
 	keep(keep)
 {
 	SDL_Surface *surface;
@@ -52,7 +52,7 @@ Texture::Texture(Renderer *renderer, std::filesystem::path path, bool keep) :
 
 Texture::Texture(Renderer *renderer, std::string text, COLOR color, bool keep) :
 	path(""),
-	usage(1),
+	usage(0),
 	keep(keep)
 {
 	// TODO: implement different colors
@@ -179,6 +179,19 @@ Texture *TextureAccess::operator()()
 	return texture;
 }
 
+TextureAccess &TextureAccess::operator=(const TextureAccess &other)
+{
+	if (this == &other)
+		return *this;
+
+	texture = other.texture;
+
+	if (texture)
+		texture->addUsage();
+
+	return *this;
+}
+
 bool TextureAccess::operator==(const TextureAccess &other) const
 {
 	return texture == other.texture;
@@ -213,7 +226,7 @@ void TextureManager::cleanup()
 {
 	auto it = textures.begin();
 	while (it != textures.end())
-		if (it->getUsage() < 1 and not it->isKeep())
+		if (it->getUsage() <= 0 and not it->isKeep())
 			it = textures.erase(it);
 		else
 			it++;
